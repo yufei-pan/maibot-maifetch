@@ -1,0 +1,129 @@
+from __future__ import annotations
+
+import asyncio
+from datetime import datetime
+from pathlib import Path
+
+import pytest
+
+import maifetch.collect as collect_module
+from fakes import FakeCtx, make_settings
+from maifetch.collect import STATS_ROW_CAP, collect_snapshot
+from maifetch.snapshot import Hardware
+
+NOW = datetime(2026, 10, 1, 14, 24).astimezone()
+
+
+def _collect(ctx: FakeCtx, overrides: dict | None = None, tmp: Path = Path(".")):
+    return asyncio.run(
+        collect_snapshot(ctx, make_settings(overrides), plugin_version="0.1.0", plugin_dir=tmp, now=NOW)
+    )
+
+
+def test_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MAIBOT_HOST_VERSION", "1.3.1")
+    ctx = FakeCtx()
+    snap = _collect(ctx)
+    assert snap.failed_sources == ()
+    assert snap.identity.nickname == "麦麦"
+    assert snap.identity.alias_names == ("小麦",)
+    assert snap.identity.platforms == ("qq", "email")
+    assert snap.identity.account is None
+    assert snap.identity.local_time == NOW
+    assert snap.runtime.host_version == "1.3.1"
+    assert snap.runtime.sdk_version == "2.8.2"
+    assert snap.runtime.plugin_version == "0.1.0"
+    assert [p.plugin_id for p in snap.runtime.plugins or ()] == ["com.0-hz.maibook", "com.0-hz.maifetch"]
+    assert snap.runtime.plugin_count == 2
+    assert snap.runtime.tool_count == 2
+    assert snap.runtime.model_tasks == ("replyer", "planner", "utils", "vlm", "voice")
+    assert snap.runtime.online_since == datetime(2026, 9, 28, 10, 2).astimezone()
+    assert [m.model_name for m in snap.usage.models] == ["deepseek-v3.2", "qwen3-235b", "glm-4.6v"]
+    assert snap.usage.total_requests == 1774
+    assert snap.usage.total_tokens == 2_410_000
+    assert snap.usage.total_cost == pytest.approx(4.87)
+    assert snap.usage.total_messages == 3906
+    assert snap.usage.totals_capped is False and snap.usage.messages_capped is False
+    assert snap.hardware is None
+    asked = [kwargs.get("key") for name, kwargs in ctx.calls if name == "config.get"]
+    assert "bot.qq_account" not in asked
+
+
+def test_show_account_fetches_account() -> None:
+    snap = _collect(FakeCtx(), {"visibility": {"show_account": True}})
+    assert snap.identity.account == "123456789"
+
+
+def test_top_models_limit() -> None:
+    snap = _collect(FakeCtx(), {"usage": {"top_models": 1}})
+    assert [m.model_name for m in snap.usage.models] == ["deepseek-v3.2"]
+    assert snap.usage.total_requests == 1774
+
+
+def test_stats_requested_with_cap_and_window() -> None:
+    ctx = FakeCtx()
+    _collect(ctx, {"usage": {"window_days": 14}})
+    calls = dict(ctx.calls)
+    assert calls["statistics.local.models"] == {"days": 14, "limit": STATS_ROW_CAP}
+    assert calls["statistics.local.message_trend"]["top_chats"] == STATS_ROW_CAP
+
+
+def test_models_failure_dict_marks_failed() -> None:
+    ctx = FakeCtx({"statistics.local.models": {"success": False, "error": "db locked"}})
+    snap = _collect(ctx)
+    assert "models" in snap.failed_sources
+    assert snap.usage.total_requests is None
+    assert snap.usage.models == ()
+    assert snap.usage.total_messages == 3906
+
+
+def test_exception_marks_failed() -> None:
+    snap = _collect(FakeCtx({"component.get_all_plugins": RuntimeError("rpc closed")}))
+    assert snap.failed_sources == ("plugins",)
+    assert snap.runtime.plugin_count is None
+
+
+def test_timeout_marks_failed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(collect_module, "SOURCE_TIMEOUT_S", 0.05)
+    snap = _collect(FakeCtx(delay={"statistics.local.message_trend": 1.0}))
+    assert snap.failed_sources == ("messages",)
+    assert snap.usage.total_messages is None
+
+
+def test_capped_totals() -> None:
+    rows = [{"model_name": f"m{i}", "request_count": 1, "total_tokens": 1} for i in range(STATS_ROW_CAP)]
+    series = {"values_by_key": {f"c{i}": [1.0] for i in range(STATS_ROW_CAP)}, "total": 50.0}
+    snap = _collect(
+        FakeCtx({"statistics.local.models": lambda **_: rows, "statistics.local.message_trend": lambda **_: series})
+    )
+    assert snap.usage.totals_capped is True
+    assert snap.usage.messages_capped is True
+
+
+def test_chat_labels_never_reach_snapshot() -> None:
+    assert "秘密群" not in repr(_collect(FakeCtx()))
+
+
+def test_no_online_rows_is_not_a_failure() -> None:
+    snap = _collect(FakeCtx({"database.get": lambda **_: None}))
+    assert snap.runtime.online_since is None
+    assert "online" not in snap.failed_sources
+
+
+def test_hardware_only_when_enabled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def boom(_path: Path) -> Hardware:
+        raise AssertionError("hardware must not be collected when disabled")
+
+    monkeypatch.setattr(collect_module, "collect_hardware", boom)
+    assert _collect(FakeCtx(), tmp=tmp_path).hardware is None
+
+    monkeypatch.setattr(collect_module, "collect_hardware", lambda _path: Hardware(os="TestOS"))
+    snap = _collect(FakeCtx(), {"hardware": {"enabled": True}}, tmp_path)
+    assert snap.hardware == Hardware(os="TestOS")
+
+
+def test_identity_failure_keeps_local_time() -> None:
+    snap = _collect(FakeCtx({"config.get": {"success": False, "error": "x"}}))
+    assert "identity" in snap.failed_sources
+    assert snap.identity.nickname is None
+    assert snap.identity.local_time == NOW
