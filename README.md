@@ -81,7 +81,7 @@
 
 `nickname` `nickname_initial` `alias_names` `platforms` `account` `local_time` `timezone` `host_version` `sdk_version`
 `plugin_version` `uptime` `uptime_short` `online_since` `plugin_count` `tool_count` `model_tasks` `window_days`
-`total_requests` `total_tokens` `total_cost` `total_messages` `top_model` `top_model_more` `hw_os` `hw_kernel`
+`total_requests` `total_tokens` `total_cost` `total_messages` `top_model` `top_model_more` `model_scope` `hw_os` `hw_kernel`
 `hw_arch` `hw_cpu` `hw_memory` `hw_disk` `hw_python` `hw_uptime` `hw_virt` `generated_at`
 
 片段（插件生成的 HTML，隐藏或为空时为空串）：

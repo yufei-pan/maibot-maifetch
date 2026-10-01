@@ -54,6 +54,7 @@ SCALAR_KEYS: tuple[str, ...] = (
     "total_messages",
     "top_model",
     "top_model_more",
+    "model_scope",
     "hw_os",
     "hw_kernel",
     "hw_arch",
@@ -106,7 +107,8 @@ def build_scalars(s: Snapshot) -> dict[str, str]:
     identity, runtime, usage, hw = s.identity, s.runtime, s.usage, s.hardware
     uptime = s.uptime_seconds()
     totals_known = usage.total_requests is not None
-    more = len(usage.models) - 1 if usage.models else 0
+    model_total = usage.model_count if usage.model_count is not None else len(usage.models)
+    more = model_total - 1 if usage.models else 0
     return {
         "nickname": _v(identity.nickname),
         "nickname_initial": _e(identity.nickname[0]) if identity.nickname else "麦",
@@ -135,7 +137,8 @@ def build_scalars(s: Snapshot) -> dict[str, str]:
             capped(fmt_int(usage.total_messages), usage.messages_capped) if usage.total_messages is not None else None
         ),
         "top_model": _v(usage.models[0].model_name if usage.models else None),
-        "top_model_more": f"(+{more})" if more > 0 else "",
+        "top_model_more": f"(+{capped(str(more), usage.totals_capped)})" if more > 0 else "",
+        "model_scope": _e(_model_scope(usage.model_count, len(usage.models), usage.totals_capped)),
         "hw_os": _v(hw.os if hw else None, hideable=True),
         "hw_kernel": _v(hw.kernel if hw else None, hideable=True),
         "hw_arch": _v(hw.arch if hw else None, hideable=True),
@@ -147,6 +150,16 @@ def build_scalars(s: Snapshot) -> dict[str, str]:
         "hw_virt": _v(hw.virt if hw else None, hideable=True),
         "generated_at": _e(fmt_datetime(s.collected_at)),
     }
+
+
+def _model_scope(model_count: int | None, listed: int, is_capped: bool) -> str:
+    """模型区块的范围标签：「前 5 / 共 12」或「共 3 个」；数量未知时为空串。"""
+
+    if model_count is None:
+        return ""
+    if model_count <= listed and not is_capped:
+        return f"共 {model_count} 个"
+    return f"前 {listed} / 共 {capped(str(model_count), is_capped)}"
 
 
 def _tiles(s: Snapshot) -> str:

@@ -67,3 +67,23 @@ def test_templates_hide_empty_platforms(name: str) -> None:
     assert "未知" not in html
     if name != "sheet":
         assert 'data-v=""' in html
+
+
+@pytest.mark.parametrize("name", ["dashboard", "sheet"])
+def test_model_section_shows_scope(name: str) -> None:
+    from dataclasses import replace
+
+    snap = sample_snapshot()
+    snap = replace(snap, usage=replace(snap.usage, model_count=12))
+    html = build_card_html(snap, _template(name))
+    assert 'data-v="前 3 / 共 12"> · 前 3 / 共 12</span>' in html
+
+
+@pytest.mark.parametrize("name", ["dashboard", "sheet"])
+def test_model_scope_hidden_when_unknown(name: str) -> None:
+    from dataclasses import replace
+
+    snap = sample_snapshot()
+    snap = replace(snap, usage=replace(snap.usage, model_count=None))
+    html = build_card_html(snap, _template(name))
+    assert 'class="ms" data-v=""' in html

@@ -407,7 +407,7 @@ fragment class; the README carries the full table.
   `{nickname}` `{nickname_initial}` `{alias_names}` `{platforms}` `{account}` `{local_time}` `{timezone}`
   `{host_version}` `{sdk_version}` `{plugin_version}` `{uptime}` `{uptime_short}` `{online_since}`
   `{plugin_count}` `{tool_count}` `{model_tasks}` `{window_days}`
-  `{total_requests}` `{total_tokens}` `{total_cost}` `{total_messages}` `{top_model}` `{top_model_more}`
+  `{total_requests}` `{total_tokens}` `{total_cost}` `{total_messages}` `{top_model}` `{top_model_more}` (counts all models, not just listed) `{model_scope}` (「前 5 / 共 12」 / 「共 3 个」 / "")
   `{hw_os}` `{hw_kernel}` `{hw_arch}` `{hw_cpu}` `{hw_memory}` `{hw_disk}` `{hw_python}` `{hw_uptime}` `{hw_virt}`
   `{generated_at}`
 - **Fragments** (pre-rendered HTML, `""` when the section is hidden/empty):

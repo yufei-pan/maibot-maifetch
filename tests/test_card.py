@@ -142,3 +142,19 @@ def test_empty_platforms_scalar_is_blank() -> None:
     snap = replace(snap, identity=replace(snap.identity, platforms=()))
     assert build_scalars(snap)["platforms"] == ""
     assert "平台" not in build_fragments(snap)["identity_rows_html"]
+
+
+def test_model_scope_scalar() -> None:
+    snap = sample_snapshot()
+    assert build_scalars(snap)["model_scope"] == "共 3 个"
+    assert build_scalars(replace(snap, usage=replace(snap.usage, model_count=12)))["model_scope"] == "前 3 / 共 12"
+    capped_usage = replace(snap.usage, model_count=50, totals_capped=True)
+    assert build_scalars(replace(snap, usage=capped_usage))["model_scope"] == "前 3 / 共 50+"
+    assert build_scalars(replace(snap, usage=replace(snap.usage, model_count=None)))["model_scope"] == ""
+
+
+def test_top_model_more_counts_all_models() -> None:
+    snap = sample_snapshot()
+    assert build_scalars(replace(snap, usage=replace(snap.usage, model_count=12)))["top_model_more"] == "(+11)"
+    capped_usage = replace(snap.usage, model_count=50, totals_capped=True)
+    assert build_scalars(replace(snap, usage=capped_usage))["top_model_more"] == "(+49+)"
