@@ -39,6 +39,7 @@
   #card .mf-hw-row { display: flex; gap: 10px; font-size: 14px; min-width: 0; }
   #card .mf-k { color: #7b808b; flex-shrink: 0; }
   #card .mf-v { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #card .pf[data-v=""] { display: none; }
   #card .ft { display: flex; justify-content: space-between; color: #9a9ea8; font-size: 12px; }
 </style>
 <div id="card">
@@ -46,7 +47,7 @@
     <div class="av">{nickname_initial}</div>
     <div>
       <div class="name">{nickname}</div>
-      <div class="sub">MaiBot {host_version} · SDK {sdk_version} · {platforms}</div>
+      <div class="sub">MaiBot {host_version} · SDK {sdk_version}<span class="pf" data-v="{platforms}"> · {platforms}</span></div>
     </div>
   </div>
   <div class="tiles">{tiles_html}</div>

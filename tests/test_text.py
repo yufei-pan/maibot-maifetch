@@ -159,3 +159,11 @@ def test_injection_drops_unknown_pieces() -> None:
     assert text.startswith(INJECTION_TAG)
     assert "未知" not in text
     assert "maifetch 工具" in text
+
+
+def test_unknown_platforms_are_omitted() -> None:
+    snap = sample_snapshot()
+    snap = replace(snap, identity=replace(snap.identity, platforms=()))
+    text = format_tool_text(snap, "identity")
+    assert "平台" not in text
+    assert "昵称：麦麦" in text

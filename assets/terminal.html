@@ -19,6 +19,7 @@
   #card .at { color: #86e541; }
   #card .k { color: #ef8d24; }
   #card .dim { color: #6b6f7a; }
+  #card .pf[data-v=""] { display: none; }
   #card .sw { display: flex; margin-top: 12px; }
   #card .sw span { width: 26px; height: 13px; display: block; }
 </style>
@@ -33,7 +34,7 @@
       <div><span class="k">SDK</span>: {sdk_version}</div>
       <div><span class="k">Online</span>: {uptime_short}</div>
       <div><span class="k">Plugins</span>: {plugin_count} ({tool_count} tools)</div>
-      <div><span class="k">Platforms</span>: {platforms}</div>
+      <div class="pf" data-v="{platforms}"><span class="k">Platforms</span>: {platforms}</div>
       <div><span class="k">Model</span>: {top_model} {top_model_more}</div>
       <div><span class="k">Usage</span>: {total_tokens} tok / {total_requests} req ({window_days}d)</div>
       {hardware_lines_html}

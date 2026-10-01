@@ -264,3 +264,59 @@ def test_hidden_cost_not_in_rendered_card() -> None:
     run(make_plugin(ctx).cmd_maifetch(stream_id="s1", matched_groups={}))
     assert "¥" not in ctx.rendered_html[0]
     assert "123456789" not in ctx.rendered_html[0]
+
+
+def test_refresh_keeps_retrying_until_complete() -> None:
+    down = {"success": False, "error": "Host 尚未就绪"}
+    ctx = FakeCtx({name: down for name in FakeCtx().responses})
+
+    async def scenario() -> list[float]:
+        instance = make_plugin(ctx)
+        instance._refresh_settings()
+        delays = []
+        for _ in range(2):
+            delays.append(instance._next_delay(await instance._refresh_once()))
+        ctx.responses.update(FakeCtx().responses)
+        delays.append(instance._next_delay(await instance._refresh_once()))
+        assert "你是「麦麦」" in instance._injection_text
+        return delays
+
+    assert run(scenario()) == [maifetch_plugin.RETRY_SECONDS, maifetch_plugin.RETRY_SECONDS, 600]
+
+
+def test_warmup_follow_up_refresh_after_load() -> None:
+    async def scenario() -> list[float]:
+        instance = make_plugin()
+        await instance.on_load()
+        await instance._stop_refresher()
+        ok = await instance._refresh_once()
+        return [instance._next_delay(ok), instance._next_delay(ok)]
+
+    assert run(scenario()) == [maifetch_plugin.WARMUP_SECONDS, 600]
+
+
+def test_command_send_exception_reports_maybe_failed() -> None:
+    ctx = FakeCtx(send_ok=RuntimeError("RPC 超时"))
+    result = run(make_plugin(ctx).cmd_maifetch(stream_id="s1", matched_groups={}))
+    assert result == (False, "状态卡片可能未送达", 2)
+
+
+def test_tool_send_exception_keeps_text_answer() -> None:
+    ctx = FakeCtx(send_ok=RuntimeError("RPC 超时"))
+    result = run(make_plugin(ctx).tool_maifetch(send_card=True, stream_id="s1"))
+    assert result["success"] is True
+    assert result["content"].startswith("状态卡片可能未送达。")
+    assert "【身份】" in result["content"]
+
+
+def test_invalid_base64_render_result_still_sends() -> None:
+    ctx = FakeCtx(render_result={"image_base64": "not base64!"})
+    result = run(make_plugin(ctx).cmd_maifetch(stream_id="s1", matched_groups={}))
+    assert result == (True, "已发送状态卡片", 2)
+    assert ctx.sent_images[0][0] == "not base64!"
+
+
+def test_hook_timeout_tolerates_slow_runner() -> None:
+    components = make_plugin().get_components()
+    hook = next(c for c in components if c["metadata"].get("hook") == "maisaka.planner.before_request")
+    assert hook["metadata"]["timeout_ms"] >= 5000

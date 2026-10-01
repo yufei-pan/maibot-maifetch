@@ -75,7 +75,9 @@ def _identity_block(s: Snapshot) -> str:
     name = identity.nickname or UNKNOWN
     if identity.alias_names:
         name += f"（别名：{'、'.join(identity.alias_names)}）"
-    parts = [f"昵称：{name}", f"平台：{'、'.join(identity.platforms) if identity.platforms else UNKNOWN}"]
+    parts = [f"昵称：{name}"]
+    if identity.platforms:
+        parts.append(f"平台：{'、'.join(identity.platforms)}")
     if identity.account:
         parts.append(f"账号：{identity.account}")
     if identity.local_time:

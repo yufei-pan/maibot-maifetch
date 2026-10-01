@@ -76,6 +76,7 @@ These drove the design; re-verify if the Host target moves.
 | `statistics.local.*` caps `limit`/`top_chats` at 50 and `days` at 365; `message_trend` total sums only the returned chats | `capabilities/data.py` `_normalize_statistics_limit`, `_cap_statistics_local_message_trend` | Request 50; flag lower-bound totals with `+`. |
 | `statistics.local.models(days, limit)` → `model_name, request_count, total_tokens, total_cost, avg_response_time` | `capabilities/data.py` | Model table + totals. |
 | `OnlineTime` rows: newest by `end_timestamp` has `start_timestamp` = current continuous online session (restarts within 1 min merged) | `src/chat/utils/statistic.py`, `database_model.OnlineTime` | Cross-platform uptime via `ctx.db.get("OnlineTime", order_by="-end_timestamp", limit=1, single_result=True)`. |
+| `bot.platforms` entries are `platform:账号` strings; `bot.platform` / `bot.platforms` are adapter *fallbacks* (default empty) | `src/config/official_configs.py` `BotConfig`, `src/services/bot_account_service.py` | Only the platform name is used; account IDs never output; empty platforms are omitted (not 「未知」). |
 | `component.get_all_plugins` → `{pid: {name, version, components:[{name, type, enabled, ...}]}}` | `capabilities/components.py` | Plugin list + tool count (`type` ∈ tool/action, case-insensitive, `enabled`). |
 | Replyer **drops** `ToolResultMessage` from its context | `src/chat/replyer/maisaka_generator_base.py` `_is_replyer_filtered_history_message` | Tool output must tell the planner to copy relevant facts into `reply`'s `reply_reference`. |
 | `maisaka.planner.before_request` payload: `items` (schema v1), `item_schema_version`, `tool_definitions`, `session_id`; first item is the system prompt; 1.3 measures prompt-cache hit/miss per section | `src/maisaka/chat_loop_service.py` | Inject into the system item; injected text must be **stable** (no live counters). |
@@ -152,7 +153,10 @@ Rule: every consumer reads a **redacted** `Snapshot`. Nothing formats raw collec
 
 - Started in `on_load` (first refresh runs immediately), loops every `injection.refresh_minutes` (default 10).
   If a refresh raises or reports failed sources while no good cache exists yet (e.g. Host capabilities not ready at
-  load), the next attempt runs after 30 s instead of the full interval.
+  load), the next attempt runs after 30 s instead of the full interval — repeatedly, until a refresh succeeds for
+  every source the injection uses (identity, models, plugins). After the first complete refresh following load, one
+  warm-up refresh runs 60 s later: the Runner activates plugins one by one, so plugins after maifetch are not yet
+  registered at its first refresh and the plugin/tool counts would be low.
 - Also triggered by `on_config_update(scope=self)`.
 - On success: replace cache `{snapshot, injection_text}`. On failure: keep previous cache, log warning.
 - Cancelled and awaited in `on_unload`.
@@ -161,7 +165,9 @@ Rule: every consumer reads a **redacted** `Snapshot`. Nothing formats raw collec
 
 ### 2. Hook — `maisaka.planner.before_request`
 
-- `@HookHandler(..., mode=BLOCKING, order=NORMAL, timeout_ms=1000, error_policy=SKIP)`.
+- `@HookHandler(..., mode=BLOCKING, order=NORMAL, timeout_ms=5000, error_policy=SKIP)`. The timeout covers the
+  IPC round trip of the whole planner context; three consecutive hook timeouts open the Host's plugin-wide circuit
+  breaker for 60–300 s (disabling the tool and command too), so it must not be tight.
 - If `plugin.enabled` and `injection.enabled` and cache ready: find the **first** item with
   `item_type == "SystemMessageItem"` in `items` (when `item_schema_version == 1`) and append a part
   `{"type": "text", "text": "\n\n" + injection_text}`. If `items` absent, legacy `messages` path: first
@@ -232,7 +238,8 @@ All fields optional (`None` = unknown/hidden). Frozen dataclasses; `Snapshot.fai
 class Identity:
     nickname: str | None
     alias_names: tuple[str, ...]
-    platforms: tuple[str, ...]          # bot.platform first, then bot.platforms (deduped)
+    platforms: tuple[str, ...]          # platform NAMES only: bot.platform + the part before ':' of each
+                                        # bot.platforms entry (format platform:账号); account IDs discarded
     account: str | None                 # bot.qq_account — hidden by default
     local_time: datetime | None         # tz-aware, process clock
     timezone: str | None                # IANA name when resolvable, else abbreviation

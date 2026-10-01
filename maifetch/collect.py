@@ -112,14 +112,23 @@ def local_timezone_name() -> str | None:
     return datetime.now().astimezone().tzname()
 
 
+def _platform_names(primary: Any, extra: Any) -> tuple[str, ...]:
+    """bot.platform 与 bot.platforms（格式为 platform:账号）只取平台名；账号 ID 一律丢弃，绝不输出。"""
+
+    names: list[str] = []
+    for entry in (primary, *_str_tuple(extra)):
+        name = str(entry or "").partition(":")[0].strip().lower()
+        if name and name not in names:
+            names.append(name)
+    return tuple(names)
+
+
 def parse_identity(values: Mapping[str, Any] | None, *, now: datetime, timezone: str | None) -> Identity:
     values = values or {}
-    primary = _str_or_none(values.get("bot.platform"))
-    platforms = _str_tuple(([primary] if primary else []) + list(_str_tuple(values.get("bot.platforms"))))
     return Identity(
         nickname=_str_or_none(values.get("bot.nickname")),
         alias_names=_str_tuple(values.get("bot.alias_names")),
-        platforms=platforms,
+        platforms=_platform_names(values.get("bot.platform"), values.get("bot.platforms")),
         account=_str_or_none(values.get(_ACCOUNT_KEY)),
         local_time=now,
         timezone=timezone,

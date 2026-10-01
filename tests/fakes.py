@@ -104,7 +104,7 @@ class FakeCtx:
         responses: dict[str, Any] | None = None,
         *,
         render_result: Any = None,
-        send_ok: bool = True,
+        send_ok: bool | Exception = True,
         delay: dict[str, float] | None = None,
     ) -> None:
         self.responses = default_responses()
@@ -148,6 +148,8 @@ class FakeCtx:
     async def _send_image(self, image_base64: str, stream_id: str, **kwargs: Any) -> bool:
         del kwargs
         self.sent_images.append((image_base64, stream_id))
+        if isinstance(self._send_ok, Exception):
+            raise self._send_ok
         return self._send_ok
 
     async def _send_text(self, text: str, stream_id: str, **kwargs: Any) -> bool:

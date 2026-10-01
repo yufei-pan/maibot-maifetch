@@ -111,7 +111,7 @@ def build_scalars(s: Snapshot) -> dict[str, str]:
         "nickname": _v(identity.nickname),
         "nickname_initial": _e(identity.nickname[0]) if identity.nickname else "麦",
         "alias_names": _e("、".join(identity.alias_names)),
-        "platforms": _v("、".join(identity.platforms)),
+        "platforms": _v("、".join(identity.platforms), hideable=True),
         "account": _v(identity.account, hideable=True),
         "local_time": _v(fmt_datetime(identity.local_time) if identity.local_time else None),
         "timezone": _v(identity.timezone),
@@ -266,7 +266,8 @@ def _identity_rows(s: Snapshot) -> str:
     rows = [_tr("昵称", identity.nickname or UNKNOWN)]
     if identity.alias_names:
         rows.append(_tr("别名", "、".join(identity.alias_names)))
-    rows.append(_tr("平台", "、".join(identity.platforms) if identity.platforms else UNKNOWN))
+    if identity.platforms:
+        rows.append(_tr("平台", "、".join(identity.platforms)))
     if identity.account:
         rows.append(_tr("账号", identity.account))
     if identity.local_time:

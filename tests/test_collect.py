@@ -125,3 +125,31 @@ def test_identity_failure_keeps_local_time() -> None:
     assert "identity" in snap.failed_sources
     assert snap.identity.nickname is None
     assert snap.identity.local_time == NOW
+
+
+def test_platform_account_entries_never_leak() -> None:
+    """bot.platforms 的格式是 platform:账号；账号 ID 不得出现在任何输出面。"""
+    from maifetch.card import build_card_html, build_data_json, build_fragments, build_scalars
+    from maifetch.text import format_injection, format_tool_text, format_user_text
+
+    values = {
+        "bot.nickname": "麦麦",
+        "bot.platform": "qq",
+        "bot.platforms": ["telegram:7712345678", "QQ:3141592653", "napcat:123456:extra", "email"],
+    }
+    ctx = FakeCtx({"config.get": lambda key, default=None: values.get(key, default)})
+    snap = _collect(ctx)
+    assert snap.identity.platforms == ("qq", "telegram", "napcat", "email")
+    surfaces = "\n".join(
+        [
+            format_injection(snap),
+            format_tool_text(snap),
+            format_user_text(snap),
+            *build_scalars(snap).values(),
+            *build_fragments(snap).values(),
+            build_data_json(snap),
+            build_card_html(snap, '<div id="card">{platforms}</div>'),
+        ]
+    )
+    for secret in ("7712345678", "3141592653", "123456"):
+        assert secret not in surfaces, secret

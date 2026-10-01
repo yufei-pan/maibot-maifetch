@@ -55,3 +55,15 @@ def test_sheet_specifics() -> None:
     html = build_card_html(sample_snapshot(cost=True), _template("sheet"))
     assert "<td>合计</td><td>1,774 次 · 2.41M tok · 消息 3,906 条 · ¥4.87</td>" in html
     assert '<div class="sec">硬件</div>' in html
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_templates_hide_empty_platforms(name: str) -> None:
+    from dataclasses import replace
+
+    snap = sample_snapshot()
+    snap = replace(snap, identity=replace(snap.identity, platforms=()))
+    html = build_card_html(snap, _template(name))
+    assert "未知" not in html
+    if name != "sheet":
+        assert 'data-v=""' in html

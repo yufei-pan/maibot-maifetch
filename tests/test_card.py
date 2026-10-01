@@ -135,3 +135,10 @@ def test_placeholder_keys_include_everything() -> None:
 def test_short_plugin_name() -> None:
     assert short_plugin_name("com.0-hz.fetch-url") == "fetch-url"
     assert short_plugin_name("plain") == "plain"
+
+
+def test_empty_platforms_scalar_is_blank() -> None:
+    snap = sample_snapshot()
+    snap = replace(snap, identity=replace(snap.identity, platforms=()))
+    assert build_scalars(snap)["platforms"] == ""
+    assert "平台" not in build_fragments(snap)["identity_rows_html"]

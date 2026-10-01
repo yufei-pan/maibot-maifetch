@@ -51,8 +51,11 @@ from maifetch.text import SECTIONS, format_injection, format_tool_text, format_u
 
 PLUGIN_VERSION: str = json.loads((_PLUGIN_DIR / "_manifest.json").read_text(encoding="utf-8"))["version"]
 FONT_DIR = _PLUGIN_DIR / "assets" / "fonts"
-HOOK_TIMEOUT_MS = 1000
+HOOK_TIMEOUT_MS = 5000
 RETRY_SECONDS = 30
+WARMUP_SECONDS = 60
+# 注入摘要依赖的数据源；其中任何一个失败，摘要就不算完整
+INJECTION_SOURCES = frozenset({"identity", "models", "plugins"})
 RENDER_VIEWPORT = {"width": 800, "height": 600}
 
 CARD_SENT = "sent"
@@ -77,6 +80,8 @@ class MaiFetchPlugin(MaiBotPlugin):
         self._refresh_task: asyncio.Task[None] | None = None
         self._cooldown = Cooldown(0)
         self._webp_warned = False
+        self._has_complete_cache = False
+        self._warmup_pending = False
 
     # ------------------------------------------------------------------ #
     # 配置
@@ -113,6 +118,8 @@ class MaiFetchPlugin(MaiBotPlugin):
     # ------------------------------------------------------------------ #
     async def on_load(self) -> None:
         settings = self._refresh_settings()
+        # Runner 逐个激活插件：首次刷新时排在后面的插件还没注册，加载后补刷一次以拿到完整插件数
+        self._warmup_pending = True
         self._restart_refresher()
         self.ctx.logger.info(
             "maifetch 已加载：注入=%s，模板=%s，硬件=%s，统计窗口=%s 天",
@@ -146,6 +153,7 @@ class MaiFetchPlugin(MaiBotPlugin):
             self._refresh_task = asyncio.create_task(self._refresh_loop(), name="maifetch.refresh")
         else:
             self._injection_text = ""
+            self._has_complete_cache = False
 
     async def _stop_refresher(self) -> None:
         task, self._refresh_task = self._refresh_task, None
@@ -158,8 +166,15 @@ class MaiFetchPlugin(MaiBotPlugin):
             pass
 
     def _next_delay(self, ok: bool) -> float:
+        """下一次刷新前的等待秒数：摘要不完整时 30 s 重试；加载后首次成功再补刷一次；之后按配置间隔。"""
+
         interval = self._require_settings().refresh_minutes * 60
-        return interval if ok else min(RETRY_SECONDS, interval)
+        if not ok:
+            return min(RETRY_SECONDS, interval)
+        if self._warmup_pending:
+            self._warmup_pending = False
+            return min(WARMUP_SECONDS, interval)
+        return interval
 
     async def _refresh_loop(self) -> None:
         while True:
@@ -167,18 +182,25 @@ class MaiFetchPlugin(MaiBotPlugin):
             await asyncio.sleep(self._next_delay(ok))
 
     async def _refresh_once(self) -> bool:
-        """刷新注入摘要。返回 False 表示还没拿到完整数据（如 Host 尚未就绪），调用方会提早重试。"""
+        """刷新注入摘要。返回 False 表示还没有完整摘要（如 Host 尚未就绪），调用方会 30 s 后重试。"""
 
         try:
             snapshot = await self._collect()
         except Exception as exc:  # noqa: BLE001 - 刷新失败沿用旧缓存
             self.ctx.logger.warning("maifetch 刷新自身信息失败，沿用上次缓存：%s", exc)
-            return bool(self._injection_text)
-        if snapshot.failed_sources and self._injection_text:
-            self.ctx.logger.debug("maifetch 部分数据源不可用（%s），保留上次摘要", "、".join(snapshot.failed_sources))
+            return self._has_complete_cache
+        if not set(snapshot.failed_sources) & INJECTION_SOURCES:
+            self._injection_text = format_injection(snapshot)
+            self._has_complete_cache = True
             return True
+        if self._has_complete_cache:
+            self.ctx.logger.debug(
+                "maifetch 部分数据源不可用（%s），保留上次完整摘要", "、".join(snapshot.failed_sources)
+            )
+            return True
+        # 还没有完整摘要：先用残缺的（总比没有好），并继续快速重试
         self._injection_text = format_injection(snapshot)
-        return not snapshot.failed_sources
+        return False
 
     async def _collect(self) -> Snapshot:
         settings = self._require_settings()
@@ -315,13 +337,21 @@ class MaiFetchPlugin(MaiBotPlugin):
             self.ctx.logger.warning("maifetch 卡片渲染未返回图片：%s", reason)
             return CARD_RENDER_FAILED
         if settings.image_format == "webp":
-            webp = await asyncio.to_thread(png_to_webp, b64decode(image_b64))
+            try:
+                webp = await asyncio.to_thread(png_to_webp, b64decode(image_b64))
+            except ValueError:  # base64 解码失败（binascii.Error 是 ValueError 子类）：按原样发送
+                webp = None
             if webp is not None:
                 image_b64 = b64encode(webp).decode("ascii")
             elif not self._webp_warned:
                 self._webp_warned = True
                 self.ctx.logger.warning("maifetch 无法转为 WebP（Pillow 不可用或编码失败），改发 PNG")
-        if await self.ctx.send.image(image_b64, stream_id):
+        try:
+            sent = await self.ctx.send.image(image_b64, stream_id)
+        except Exception as exc:  # noqa: BLE001 - RPC 超时 / Host 异常：可能已送达，也可能没有
+            self.ctx.logger.warning("maifetch 状态卡片发送异常（可能未送达）：%s", exc)
+            return CARD_MAYBE_FAILED
+        if sent:
             return CARD_SENT
         self.ctx.logger.warning("maifetch 状态卡片发送返回失败（经 NapCat 发送大图时可能是误报）：stream=%s", stream_id)
         return CARD_MAYBE_FAILED
