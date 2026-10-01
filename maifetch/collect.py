@@ -181,8 +181,8 @@ def parse_model_tasks(raw: Any) -> tuple[str, ...]:
     return _str_tuple(raw)
 
 
-def parse_models(raw: Any, top_k: int) -> tuple[tuple[ModelUsage, ...], int, int, int, float, bool]:
-    """返回 (前 top_k 个模型, 模型总数, 总请求, 总 tokens, 总花费, 是否触顶)；合计覆盖全部返回的模型。"""
+def parse_models(raw: Any, top_k: int) -> dict[str, Any]:
+    """解析模型统计为 Usage 字段：调用次数排行、花费排行（同一批行，不额外请求）与覆盖全部模型的合计。"""
 
     if not isinstance(raw, list):
         raise SourceError("模型统计格式异常")
@@ -201,7 +201,19 @@ def parse_models(raw: Any, top_k: int) -> tuple[tuple[ModelUsage, ...], int, int
     total_requests = sum(item.requests for item in rows)
     total_tokens = sum(item.tokens for item in rows)
     total_cost = sum(item.cost or 0.0 for item in rows)
-    return tuple(rows[:top_k]), len(rows), total_requests, total_tokens, total_cost, len(raw) >= STATS_ROW_CAP
+    costed = sorted(
+        (item for item in rows if (item.cost or 0.0) > 0), key=lambda item: (-(item.cost or 0.0), item.model_name)
+    )
+    return {
+        "models": tuple(rows[:top_k]),
+        "model_count": len(rows),
+        "models_by_cost": tuple(costed[:top_k]),
+        "costed_model_count": len(costed),
+        "total_requests": total_requests,
+        "total_tokens": total_tokens,
+        "total_cost": total_cost,
+        "totals_capped": len(raw) >= STATS_ROW_CAP,
+    }
 
 
 def parse_messages(raw: Any) -> tuple[int, bool]:
@@ -293,17 +305,7 @@ async def collect_snapshot(
         tool_count=tool_count,
         model_tasks=tasks,
     )
-    usage_fields: dict[str, Any] = {}
-    if models_parsed:
-        top, model_count, total_requests, total_tokens, total_cost, totals_capped = models_parsed
-        usage_fields = {
-            "models": top,
-            "model_count": model_count,
-            "total_requests": total_requests,
-            "total_tokens": total_tokens,
-            "total_cost": total_cost,
-            "totals_capped": totals_capped,
-        }
+    usage_fields: dict[str, Any] = models_parsed or {}
     total_messages, messages_capped = messages_parsed if messages_parsed else (None, False)
     usage = Usage(window_days=days, total_messages=total_messages, messages_capped=messages_capped, **usage_fields)
     return Snapshot(

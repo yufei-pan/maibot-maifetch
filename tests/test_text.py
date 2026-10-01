@@ -185,3 +185,33 @@ def test_models_block_capped_model_count() -> None:
     snap = sample_snapshot()
     snap = replace(snap, usage=replace(snap.usage, model_count=50, totals_capped=True))
     assert "（共 50+ 个模型，其余未列出）" in format_tool_text(snap, "models")
+
+
+def test_cost_ranking_block() -> None:
+    text = format_tool_text(sample_snapshot(cost=True), "usage")
+    assert "【花费排行·近 7 天】全部 3 个有花费的模型：qwen3-235b ¥3.42/402 次/410.0K tok；deepseek-v3.2 ¥0.96" in text
+    lines = text.splitlines()
+    assert lines.index(next(x for x in lines if x.startswith("【模型用量"))) < lines.index(
+        next(x for x in lines if x.startswith("【花费排行"))
+    )
+
+
+def test_cost_ranking_top_k_scope() -> None:
+    snap = sample_snapshot(cost=True)
+    snap = replace(snap, usage=replace(snap.usage, costed_model_count=9))
+    assert "【花费排行·近 7 天】花费最高的前 3 个（共 9 个有花费的模型，其余未列出）：" in format_tool_text(
+        snap, "usage"
+    )
+
+
+def test_rankings_can_be_turned_off() -> None:
+    snap = sample_snapshot(cost=True)
+    snap = replace(snap, usage=replace(snap.usage, show_request_ranking=False, show_cost_ranking=False))
+    text = format_tool_text(snap, "all")
+    assert "【模型用量" not in text and "【花费排行" not in text
+    assert "【合计·近 7 天（全部模型）】1,774 次请求" in text
+
+
+def test_cost_alias_and_hidden_by_default_sample() -> None:
+    assert normalize_section("花费") == ("usage", None)
+    assert "【花费排行" not in format_tool_text(sample_snapshot(), "usage")

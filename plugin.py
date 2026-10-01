@@ -205,7 +205,13 @@ class MaiFetchPlugin(MaiBotPlugin):
     async def _collect(self) -> Snapshot:
         settings = self._require_settings()
         raw = await collect_snapshot(self.ctx, settings, plugin_version=PLUGIN_VERSION, plugin_dir=_PLUGIN_DIR)
-        return apply_visibility(raw, settings.visibility, settings.hardware)
+        return apply_visibility(
+            raw,
+            settings.visibility,
+            settings.hardware,
+            show_by_requests=settings.show_by_requests,
+            show_by_cost=settings.show_by_cost,
+        )
 
     # ------------------------------------------------------------------ #
     # 规划器注入

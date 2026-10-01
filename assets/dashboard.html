@@ -2,6 +2,7 @@
   maifetch 状态卡片模板：dashboard（默认 · 紧凑仪表盘）
   约定：根元素必须是 id="card"（截图选择器）；占位符写作 花括号+名称，完整列表见 README「模板占位符」。
   本模板用到：nickname_initial nickname host_version sdk_version platforms tiles_html window_days model_scope
+             cost_block_html
              model_rows_html plugin_list_html hardware_block_html timezone local_time plugin_version
   注意：不要在 HTML 注释里写带花括号的占位符，它们同样会被替换。
 -->
@@ -28,8 +29,12 @@
   #card .mf-model-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #card .mf-model-bar { height: 6px; background: #e9ebef; border-radius: 3px; overflow: hidden; }
   #card .mf-model-bar i { display: block; height: 100%; background: #7d8799; }
-  #card .mf-model-req, #card .mf-model-tok, #card .mf-model-cost { text-align: right; color: #4a4e57; font-size: 14px;
-    white-space: nowrap; }
+  #card .mf-cost-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px 72px 84px 72px; gap: 10px;
+    align-items: center; padding: 4px 0; }
+  #card .mf-model-req, #card .mf-model-tok, #card .mf-model-cost, #card .mf-cost-val { text-align: right; color: #4a4e57;
+    font-size: 14px; white-space: nowrap; }
+  #card .mf-cost-val { color: #23252a; font-weight: 700; }
+  #card .mf-models:has(.rows:empty) { display: none; }
   #card .mf-empty { color: #9a9ea8; font-size: 14px; }
   #card .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   #card .mf-plugins:has(.chips:empty) { display: none; }
@@ -51,10 +56,11 @@
     </div>
   </div>
   <div class="tiles">{tiles_html}</div>
-  <div class="box">
+  <div class="box mf-models">
     <div class="lbl">模型用量 · 近 {window_days} 天<span class="ms" data-v="{model_scope}"> · {model_scope}</span></div>
-    {model_rows_html}
+    <div class="rows">{model_rows_html}</div>
   </div>
+  {cost_block_html}
   <div class="box mf-plugins">
     <div class="lbl">已加载插件</div>
     <div class="chips">{plugin_list_html}</div>

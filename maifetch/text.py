@@ -45,6 +45,9 @@ _SECTION_ALIASES: dict[str, str] = {
     "用量统计": "usage",
     "token": "usage",
     "tokens": "usage",
+    "花费": "usage",
+    "成本": "usage",
+    "cost": "usage",
     "hardware": "hardware",
     "硬件": "hardware",
     "机器": "hardware",
@@ -121,8 +124,10 @@ def _tasks_block(s: Snapshot) -> str:
     return "【模型任务】" + ("、".join(tasks) if tasks else UNKNOWN)
 
 
-def _models_block(s: Snapshot) -> str:
+def _models_block(s: Snapshot) -> str | None:
     usage = s.usage
+    if not usage.show_request_ranking:
+        return None
     title = f"【模型用量·近 {usage.window_days} 天】"
     if usage.total_requests is None:
         return title + UNKNOWN
@@ -147,6 +152,32 @@ def _models_scope(model_count: int | None, listed: int, is_capped: bool) -> str:
     if model_count <= listed and not is_capped:
         return f"全部 {model_count} 个模型："
     return f"调用次数最多的前 {listed} 个（共 {capped(str(model_count), is_capped)} 个模型，其余未列出）："
+
+
+def _cost_block(s: Snapshot) -> str | None:
+    usage = s.usage
+    if not usage.show_cost_ranking:
+        return None
+    title = f"【花费排行·近 {usage.window_days} 天】"
+    if usage.total_requests is None:
+        return title + UNKNOWN
+    if not usage.models_by_cost:
+        return title + "暂无花费记录"
+    items = [
+        f"{model.model_name} {fmt_cost(model.cost or 0.0)}/{fmt_int(model.requests)} 次/{fmt_tokens(model.tokens)} tok"
+        for model in usage.models_by_cost
+    ]
+    return (
+        title + _cost_scope(usage.costed_model_count, len(usage.models_by_cost), usage.totals_capped) + "；".join(items)
+    )
+
+
+def _cost_scope(costed_count: int | None, listed: int, is_capped: bool) -> str:
+    if costed_count is None:
+        return ""
+    if costed_count <= listed and not is_capped:
+        return f"全部 {costed_count} 个有花费的模型："
+    return f"花费最高的前 {listed} 个（共 {capped(str(costed_count), is_capped)} 个有花费的模型，其余未列出）："
 
 
 def _totals_block(s: Snapshot) -> str:
@@ -189,13 +220,14 @@ def _hardware_block(s: Snapshot) -> str:
     return "【硬件】" + (" · ".join(parts) if parts else "（所有硬件字段均已隐藏）")
 
 
-_Block = Callable[[Snapshot], str]
+_Block = Callable[[Snapshot], str | None]
 _ALL_BLOCKS: tuple[_Block, ...] = (
     _identity_block,
     _runtime_block,
     _plugins_block,
     _tasks_block,
     _models_block,
+    _cost_block,
     _totals_block,
 )
 _SECTION_BLOCKS: dict[str, tuple[_Block, ...]] = {
@@ -203,7 +235,7 @@ _SECTION_BLOCKS: dict[str, tuple[_Block, ...]] = {
     "runtime": (_runtime_block,),
     "plugins": (_plugins_block,),
     "models": (_tasks_block, _models_block),
-    "usage": (_models_block, _totals_block),
+    "usage": (_models_block, _cost_block, _totals_block),
     "hardware": (_hardware_block,),
 }
 
@@ -213,7 +245,7 @@ def _blocks(s: Snapshot, section: str) -> list[str]:
         builders = list(_ALL_BLOCKS) + ([_hardware_block] if s.hardware is not None else [])
     else:
         builders = list(_SECTION_BLOCKS[section])
-    return [build(s) for build in builders]
+    return [block for block in (build(s) for build in builders) if block is not None]
 
 
 def format_tool_text(s: Snapshot, section: Any = "all") -> str:

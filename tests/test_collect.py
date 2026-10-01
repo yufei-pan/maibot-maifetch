@@ -154,3 +154,16 @@ def test_platform_account_entries_never_leak() -> None:
     )
     for secret in ("7712345678", "3141592653", "123456"):
         assert secret not in surfaces, secret
+
+
+def test_cost_ranking_from_same_rows() -> None:
+    rows = [
+        {"model_name": "cheap-busy", "request_count": 900, "total_tokens": 9_000, "total_cost": 0.10},
+        {"model_name": "pricey", "request_count": 10, "total_tokens": 1_000, "total_cost": 2.50},
+        {"model_name": "free", "request_count": 500, "total_tokens": 5_000, "total_cost": 0.0},
+        {"model_name": "unknown-cost", "request_count": 5, "total_tokens": 50},
+    ]
+    snap = _collect(FakeCtx({"statistics.local.models": lambda **_: rows}), {"usage": {"top_models": 5}})
+    assert [m.model_name for m in snap.usage.models_by_cost] == ["pricey", "cheap-busy"]
+    assert snap.usage.costed_model_count == 2
+    assert snap.usage.models[0].model_name == "cheap-busy"

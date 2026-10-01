@@ -29,8 +29,8 @@ def sample_snapshot(*, hardware: bool = True, cost: bool = False, account: bool 
 
     now = datetime(2026, 10, 1, 14, 24, tzinfo=_CST)
     models = (
-        ModelUsage("deepseek-v3.2", 1284, 1_860_000, 2.1, 3.42 if cost else None),
-        ModelUsage("qwen3-235b", 402, 410_000, 3.4, 0.96 if cost else None),
+        ModelUsage("deepseek-v3.2", 1284, 1_860_000, 2.1, 0.96 if cost else None),
+        ModelUsage("qwen3-235b", 402, 410_000, 3.4, 3.42 if cost else None),
         ModelUsage("glm-4.6v", 88, 140_000, 4.0, 0.49 if cost else None),
     )
     return Snapshot(
@@ -57,6 +57,9 @@ def sample_snapshot(*, hardware: bool = True, cost: bool = False, account: bool 
             window_days=7,
             models=models,
             model_count=len(models),
+            models_by_cost=tuple(sorted(models, key=lambda m: -(m.cost or 0.0))) if cost else (),
+            costed_model_count=len(models) if cost else None,
+            show_cost_ranking=cost,
             total_requests=1774,
             total_tokens=2_410_000,
             total_cost=4.87 if cost else None,

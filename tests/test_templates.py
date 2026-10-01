@@ -87,3 +87,28 @@ def test_model_scope_hidden_when_unknown(name: str) -> None:
     snap = replace(snap, usage=replace(snap.usage, model_count=None))
     html = build_card_html(snap, _template(name))
     assert 'class="ms" data-v=""' in html
+
+
+def test_cost_sections_on_cards() -> None:
+    snap = sample_snapshot(cost=True)
+    assert 'class="box mf-cost"' in build_card_html(snap, _template("dashboard"))
+    assert '<div class="sec">花费排行' in build_card_html(snap, _template("sheet"))
+    terminal = build_card_html(snap, _template("terminal"))
+    assert '<span class="k">Top cost</span>: qwen3-235b ¥3.42' in terminal
+
+
+def test_cost_sections_absent_when_cost_hidden() -> None:
+    snap = sample_snapshot()
+    assert 'class="box mf-cost"' not in build_card_html(snap, _template("dashboard"))
+    assert "花费排行" not in build_card_html(snap, _template("sheet"))
+    assert 'data-v=""><span class="k">Top cost' in build_card_html(snap, _template("terminal"))
+
+
+def test_dashboard_hides_model_box_when_request_ranking_off() -> None:
+    from dataclasses import replace
+
+    snap = sample_snapshot()
+    snap = replace(snap, usage=replace(snap.usage, show_request_ranking=False))
+    html = build_card_html(snap, _template("dashboard"))
+    assert '<div class="rows"></div>' in html
+    assert ".mf-models:has(.rows:empty)" in html

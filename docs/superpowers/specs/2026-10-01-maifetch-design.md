@@ -416,6 +416,9 @@ fragment class; the README carries the full table.
   - `{model_rows_html}` — `.mf-model-row` × top-K: `.mf-model-name`, `.mf-model-bar > i[style=width:%]`
     (relative to top requests), `.mf-model-req`, `.mf-model-tok`, `.mf-model-cost` (omitted when hidden).
   - `{plugin_list_html}` — `.mf-chip` × up to 8 plugin ids, then `.mf-chip.mf-more` 「+N」; `""` when list hidden.
+  - `{cost_block_html}` / `{cost_table_html}` — cost ranking (same stats rows, sorted by cost, models with cost > 0) as
+    a dashboard box / sheet section; `""` when `usage.show_by_cost` or `visibility.show_cost` is off. Scalars
+    `{top_cost_model}` (「qwen3-235b ¥3.42」) and `{cost_scope}` accompany them.
   - `{hardware_block_html}` — `.mf-hw` with `.mf-hw-row` (`.mf-k` / `.mf-v`) per visible field; `""` when off.
   - `{hardware_lines_html}` — terminal-style `<div><span class="k">Key</span>: value</div>` lines preceded by a
     `.dim` separator; `""` when off.
@@ -500,7 +503,9 @@ show_cost = true           # 花费（按模型与合计）；默认显示（上
 
 [usage]               # 「用量统计」
 window_days = 7            # 1–90
-top_models = 5             # 1–10
+top_models = 5             # 1–10, per ranking
+show_by_requests = true    # ranking by request count (also drives the dashboard/sheet model section)
+show_by_cost = true        # ranking by cost (only when visibility.show_cost is also on)
 
 [injection]           # 「规划器注入」
 enabled = true

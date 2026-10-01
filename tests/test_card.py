@@ -158,3 +158,36 @@ def test_top_model_more_counts_all_models() -> None:
     assert build_scalars(replace(snap, usage=replace(snap.usage, model_count=12)))["top_model_more"] == "(+11)"
     capped_usage = replace(snap.usage, model_count=50, totals_capped=True)
     assert build_scalars(replace(snap, usage=capped_usage))["top_model_more"] == "(+49+)"
+
+
+def test_cost_block_fragment() -> None:
+    fragments = build_fragments(sample_snapshot(cost=True))
+    block = fragments["cost_block_html"]
+    assert block.startswith('<div class="box mf-cost">')
+    assert "花费排行 · 近 7 天" in block and "共 3 个" in block
+    assert block.count('class="mf-cost-row"') == 3
+    assert block.index("qwen3-235b") < block.index("deepseek-v3.2")
+    assert 'style="width:100%"' in block
+    table = fragments["cost_table_html"]
+    assert table.startswith('<div class="sec">花费排行 · 近 7 天')
+    assert "<td>qwen3-235b</td><td>¥3.42 · 402 次 · 410.0K tok</td>" in table
+
+
+def test_cost_fragments_empty_when_hidden() -> None:
+    fragments = build_fragments(sample_snapshot())
+    assert fragments["cost_block_html"] == ""
+    assert fragments["cost_table_html"] == ""
+    assert build_scalars(sample_snapshot())["top_cost_model"] == ""
+
+
+def test_top_cost_model_scalar() -> None:
+    assert build_scalars(sample_snapshot(cost=True))["top_cost_model"] == "qwen3-235b ¥3.42"
+
+
+def test_request_ranking_off_clears_its_fragments() -> None:
+    snap = sample_snapshot()
+    snap = replace(snap, usage=replace(snap.usage, show_request_ranking=False))
+    assert build_fragments(snap)["model_rows_html"] == ""
+    assert build_scalars(snap)["model_scope"] == ""
+    assert "<td>合计</td>" in build_fragments(snap)["model_table_rows_html"]
+    assert "deepseek-v3.2" not in build_fragments(snap)["model_table_rows_html"]

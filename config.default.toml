@@ -20,8 +20,12 @@ show_cost = true
 [usage]
 # 统计最近多少天的用量（1–90）
 window_days = 7
-# 列出用量最高的前几个模型（1–10）
+# 每个排行列出前几个模型（1–10）
 top_models = 5
+# 显示按调用次数排序的模型用量排行
+show_by_requests = true
+# 显示按花费排序的模型花费排行（需同时开启 visibility.show_cost）
+show_by_cost = true
 
 [injection]
 # 每次规划前把一段简短的自身信息追加到规划器系统提示词

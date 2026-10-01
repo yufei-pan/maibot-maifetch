@@ -49,6 +49,10 @@ class Usage:
     window_days: int = 7
     models: tuple[ModelUsage, ...] = ()  # 只是调用次数最多的前 top_models 个
     model_count: int | None = None  # 统计窗口内有调用记录的模型总数（合计覆盖全部这些模型）
+    models_by_cost: tuple[ModelUsage, ...] = ()  # 花费最高的前 top_models 个（只含花费 > 0 的模型）
+    costed_model_count: int | None = None  # 有花费记录的模型数
+    show_request_ranking: bool = True  # 是否展示调用次数排行（配置开关）
+    show_cost_ranking: bool = True  # 是否展示花费排行（配置开关且允许显示花费）
     total_requests: int | None = None
     total_tokens: int | None = None
     total_cost: float | None = None

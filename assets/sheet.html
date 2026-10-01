@@ -1,7 +1,7 @@
 <!--
   maifetch 状态卡片模板：sheet（素净信息单）
   约定同 dashboard。本模板用到：nickname host_version sdk_version identity_rows_html runtime_rows_html model_scope
-             window_days model_table_rows_html hardware_table_html plugin_version generated_at
+             window_days model_table_rows_html cost_table_html hardware_table_html plugin_version generated_at
 -->
 <style>
   #card { width: 680px; box-sizing: border-box; background: #fbfbfa; color: #2a2b2e; border: 1px solid #e3e3e0;
@@ -27,6 +27,7 @@
   <table>{runtime_rows_html}</table>
   <div class="sec">模型与用量 · 近 {window_days} 天<span class="ms" data-v="{model_scope}"> · {model_scope}</span></div>
   <table>{model_table_rows_html}</table>
+  {cost_table_html}
   {hardware_table_html}
   <div class="ft">maifetch {plugin_version} · {generated_at}</div>
 </div>

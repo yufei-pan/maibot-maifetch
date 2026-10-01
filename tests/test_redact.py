@@ -55,3 +55,20 @@ def test_individual_hardware_toggles() -> None:
     assert hw.mem_used is None and hw.mem_total is None
     assert hw.virt is None
     assert hw.os is not None and hw.disk_total is not None
+
+
+def test_cost_ranking_hidden_with_cost() -> None:
+    s = _settings({"visibility": {"show_cost": False}})
+    out = apply_visibility(_raw(), s.visibility, s.hardware, show_by_requests=True, show_by_cost=True)
+    assert out.usage.models_by_cost == ()
+    assert out.usage.costed_model_count is None
+    assert out.usage.show_cost_ranking is False
+
+
+def test_ranking_toggles() -> None:
+    s = _settings({})
+    out = apply_visibility(_raw(), s.visibility, s.hardware, show_by_requests=False, show_by_cost=False)
+    assert out.usage.show_request_ranking is False
+    assert out.usage.show_cost_ranking is False
+    assert out.usage.models_by_cost == ()
+    assert len(out.usage.models) == 3  # 规划器注入仍需要主要模型名

@@ -17,7 +17,7 @@ COMMAND_COMPONENT_NAME = "maifetch_card"
 
 SECTION_PARAM_DESCRIPTION = (
     "要查看的部分：all=全部（默认）、identity=身份、runtime=运行与版本、plugins=插件与工具、"
-    "models=模型任务与用量、usage=用量统计、hardware=硬件（运维可关闭）。也接受中文：全部/身份/版本/插件/模型/用量/硬件。"
+    "models=模型任务与用量、usage=用量统计（含花费排行）、hardware=硬件（运维可关闭）。也接受中文：全部/身份/版本/插件/模型/用量/花费/硬件。"
 )
 SEND_CARD_PARAM_DESCRIPTION = "为 true 时同时把状态卡片图片发到当前聊天（同一聊天有冷却时间）。默认 false。"
 HELP_TEXT = (

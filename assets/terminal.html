@@ -1,7 +1,8 @@
 <!--
   maifetch 状态卡片模板：terminal（neofetch 风格 · 呆萌像素麦麦）
   约定同 dashboard。本模板用到：maimai_logo_svg nickname host_version sdk_version uptime_short plugin_count
-             tool_count platforms top_model top_model_more total_tokens total_requests window_days hardware_lines_html
+             tool_count platforms top_model top_model_more total_tokens total_requests window_days top_cost_model
+             hardware_lines_html
   配色取自麦麦形象：身体 #ef8d24 · 肚皮 #fcfdfc · 瞳孔/嘴 #2f130a · 嫩芽/尾鳍 #86e541
 -->
 <style>
@@ -37,6 +38,7 @@
       <div class="pf" data-v="{platforms}"><span class="k">Platforms</span>: {platforms}</div>
       <div><span class="k">Model</span>: {top_model} {top_model_more}</div>
       <div><span class="k">Usage</span>: {total_tokens} tok / {total_requests} req ({window_days}d)</div>
+      <div class="pf" data-v="{top_cost_model}"><span class="k">Top cost</span>: {top_cost_model}</div>
       {hardware_lines_html}
       <div class="sw"><span style="background:#2f130a"></span><span style="background:#ef8d24"></span><span style="background:#f6b866"></span><span style="background:#fcfdfc"></span><span style="background:#86e541"></span><span style="background:#4f9a1f"></span></div>
     </div>

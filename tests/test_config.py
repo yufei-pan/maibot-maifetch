@@ -146,3 +146,12 @@ def test_manifest_matches_spec() -> None:
         "send.text",
         "send.image",
     }
+
+
+def test_ranking_toggles_default_on_and_flatten() -> None:
+    cfg = MaiFetchConfig()
+    assert cfg.usage.show_by_requests is True
+    assert cfg.usage.show_by_cost is True
+    settings = build_settings(MaiFetchConfig.model_validate({"usage": {"show_by_cost": False}}))
+    assert settings.show_by_requests is True
+    assert settings.show_by_cost is False

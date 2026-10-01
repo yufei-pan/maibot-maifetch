@@ -29,7 +29,7 @@
 
 工具名 `maifetch`，参数：
 
-- `section`：`all`（默认）/ `identity` / `runtime` / `plugins` / `models` / `usage` / `hardware`，也接受中文（全部、身份、版本、插件、模型、用量、硬件）。
+- `section`：`all`（默认）/ `identity` / `runtime` / `plugins` / `models` / `usage` / `hardware`，也接受中文（全部、身份、版本、插件、模型、用量、花费、硬件）。
 - `send_card`：为 true 时同时把状态卡片发到当前聊天（与命令共用冷却）。
 
 工具结果末尾会提醒规划器把相关事实写进 `reply` 工具的 `reply_reference`——回复器看不到工具结果。
@@ -45,7 +45,9 @@
 | `visibility.show_plugin_list` | `true` | 显示插件列表（关闭后仍显示数量） |
 | `visibility.show_cost` | `true` | 显示花费（群聊中所有人可见） |
 | `usage.window_days` | `7` | 用量统计窗口（1–90 天） |
-| `usage.top_models` | `5` | 列出前几个模型（1–10） |
+| `usage.top_models` | `5` | 每个排行列出前几个模型（1–10） |
+| `usage.show_by_requests` | `true` | 显示按调用次数排序的模型用量排行 |
+| `usage.show_by_cost` | `true` | 显示按花费排序的花费排行（需同时开启 `visibility.show_cost`） |
 | `injection.enabled` | `true` | 规划器注入开关 |
 | `injection.refresh_minutes` | `10` | 摘要刷新间隔（1–1440 分钟） |
 | `command.aliases` | `[]` | 命令别名 |
@@ -81,7 +83,7 @@
 
 `nickname` `nickname_initial` `alias_names` `platforms` `account` `local_time` `timezone` `host_version` `sdk_version`
 `plugin_version` `uptime` `uptime_short` `online_since` `plugin_count` `tool_count` `model_tasks` `window_days`
-`total_requests` `total_tokens` `total_cost` `total_messages` `top_model` `top_model_more` `model_scope` `hw_os` `hw_kernel`
+`total_requests` `total_tokens` `total_cost` `total_messages` `top_model` `top_model_more` `model_scope` `top_cost_model` `cost_scope` `hw_os` `hw_kernel`
 `hw_arch` `hw_cpu` `hw_memory` `hw_disk` `hw_python` `hw_uptime` `hw_virt` `generated_at`
 
 片段（插件生成的 HTML，隐藏或为空时为空串）：
@@ -91,6 +93,8 @@
 | `tiles_html` | 4 × `.mf-tile > b + span`（花费隐藏时第 4 格为请求数） |
 | `model_rows_html` | `.mf-model-row > .mf-model-name / .mf-model-bar > i / .mf-model-req / .mf-model-tok / .mf-model-cost`；无数据时 `.mf-empty` |
 | `plugin_list_html` | 最多 8 个 `.mf-chip`，其余合并为 `.mf-chip.mf-more`「+N」 |
+| `cost_block_html` | dashboard 风格的花费排行整框 `.box.mf-cost > .lbl + .mf-cost-row`（`.mf-model-name / .mf-model-bar > i / .mf-cost-val / .mf-model-req / .mf-model-tok`）；关闭时为空 |
+| `cost_table_html` | sheet 风格的花费排行小节 `<div class="sec">…</div><table>…</table>`；关闭时为空 |
 | `hardware_block_html` | `.mf-hw > .mf-hw-title + .mf-hw-grid > .mf-hw-row > .mf-k + .mf-v` |
 | `hardware_lines_html` | 终端风格：`.dim` 分隔线 + `<div><span class="k">Key</span>: value</div>` |
 | `identity_rows_html` / `runtime_rows_html` / `model_table_rows_html` | `<tr><td>标签</td><td>值</td></tr>` 行 |

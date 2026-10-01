@@ -8,12 +8,27 @@ from maifetch.config import HardwareToggles, Visibility
 from maifetch.snapshot import Snapshot
 
 
-def apply_visibility(snapshot: Snapshot, visibility: Visibility, hardware: HardwareToggles) -> Snapshot:
+def apply_visibility(
+    snapshot: Snapshot,
+    visibility: Visibility,
+    hardware: HardwareToggles,
+    *,
+    show_by_requests: bool = True,
+    show_by_cost: bool = True,
+) -> Snapshot:
     identity = snapshot.identity if visibility.show_account else replace(snapshot.identity, account=None)
     runtime = snapshot.runtime if visibility.show_plugin_list else replace(snapshot.runtime, plugins=None)
     usage = snapshot.usage
     if not visibility.show_cost:
         usage = replace(usage, total_cost=None, models=tuple(replace(m, cost=None) for m in usage.models))
+    show_cost_ranking = show_by_cost and visibility.show_cost
+    usage = replace(
+        usage,
+        show_request_ranking=show_by_requests,
+        show_cost_ranking=show_cost_ranking,
+        models_by_cost=usage.models_by_cost if show_cost_ranking else (),
+        costed_model_count=usage.costed_model_count if show_cost_ranking else None,
+    )
 
     hw = snapshot.hardware
     if hw is not None and not hardware.enabled:

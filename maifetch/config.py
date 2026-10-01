@@ -62,7 +62,11 @@ class UsageSectionConfig(PluginConfigBase):
     __ui_order__ = 2
 
     window_days: int = Field(default=7, description="统计最近多少天的用量（1–90）。")
-    top_models: int = Field(default=5, description="列出用量最高的前几个模型（1–10）。")
+    top_models: int = Field(default=5, description="每个排行列出前几个模型（1–10）。")
+    show_by_requests: bool = Field(default=True, description="显示按调用次数排序的模型用量排行。")
+    show_by_cost: bool = Field(
+        default=True, description="显示按花费排序的模型花费排行（需同时开启「可见性」中的显示花费）。"
+    )
 
 
 class InjectionSectionConfig(PluginConfigBase):
@@ -183,6 +187,8 @@ class Settings:
     visibility: Visibility
     window_days: int
     top_models: int
+    show_by_requests: bool
+    show_by_cost: bool
     injection_enabled: bool
     refresh_minutes: int
     aliases: tuple[str, ...]
@@ -285,6 +291,8 @@ def build_settings(config: MaiFetchConfig) -> Settings:
         ),
         window_days=cfg.usage.window_days,
         top_models=cfg.usage.top_models,
+        show_by_requests=cfg.usage.show_by_requests,
+        show_by_cost=cfg.usage.show_by_cost,
         injection_enabled=cfg.injection.enabled,
         refresh_minutes=cfg.injection.refresh_minutes,
         aliases=tuple(cfg.command.aliases),

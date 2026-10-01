@@ -55,6 +55,8 @@ SCALAR_KEYS: tuple[str, ...] = (
     "top_model",
     "top_model_more",
     "model_scope",
+    "top_cost_model",
+    "cost_scope",
     "hw_os",
     "hw_kernel",
     "hw_arch",
@@ -76,6 +78,8 @@ FRAGMENT_KEYS: tuple[str, ...] = (
     "runtime_rows_html",
     "model_table_rows_html",
     "hardware_table_html",
+    "cost_block_html",
+    "cost_table_html",
     "maimai_logo_svg",
 )
 PLACEHOLDER_KEYS: frozenset[str] = frozenset(SCALAR_KEYS + FRAGMENT_KEYS + ("data_json",))
@@ -138,7 +142,11 @@ def build_scalars(s: Snapshot) -> dict[str, str]:
         ),
         "top_model": _v(usage.models[0].model_name if usage.models else None),
         "top_model_more": f"(+{capped(str(more), usage.totals_capped)})" if more > 0 else "",
-        "model_scope": _e(_model_scope(usage.model_count, len(usage.models), usage.totals_capped)),
+        "model_scope": _e(_model_scope(usage.model_count, len(usage.models), usage.totals_capped))
+        if usage.show_request_ranking
+        else "",
+        "top_cost_model": _e(_top_cost_text(s)),
+        "cost_scope": _e(_cost_scope_label(s)),
         "hw_os": _v(hw.os if hw else None, hideable=True),
         "hw_kernel": _v(hw.kernel if hw else None, hideable=True),
         "hw_arch": _v(hw.arch if hw else None, hideable=True),
@@ -187,8 +195,25 @@ def _tiles(s: Snapshot) -> str:
     return "".join(f'<div class="mf-tile"><b>{_e(value)}</b><span>{_e(label)}</span></div>' for value, label in tiles)
 
 
+def _top_cost_text(s: Snapshot) -> str:
+    usage = s.usage
+    if not usage.show_cost_ranking or not usage.models_by_cost:
+        return ""
+    top = usage.models_by_cost[0]
+    return f"{top.model_name} {fmt_cost(top.cost or 0.0)}"
+
+
+def _cost_scope_label(s: Snapshot) -> str:
+    usage = s.usage
+    if not usage.show_cost_ranking:
+        return ""
+    return _model_scope(usage.costed_model_count, len(usage.models_by_cost), usage.totals_capped)
+
+
 def _model_rows(s: Snapshot) -> str:
     usage = s.usage
+    if not usage.show_request_ranking:
+        return ""
     if usage.total_requests is None:
         return f'<div class="mf-empty">{UNKNOWN}</div>'
     if not usage.models:
@@ -313,14 +338,14 @@ def _model_table_rows(s: Snapshot) -> str:
     if usage.total_requests is None:
         return _tr("模型", UNKNOWN)
     rows: list[str] = []
-    for model in usage.models:
+    for model in usage.models if usage.show_request_ranking else ():
         bits = [f"{fmt_int(model.requests)} 次", f"{fmt_tokens(model.tokens)} tok"]
         if model.avg_latency_s is not None:
             bits.append(fmt_latency(model.avg_latency_s))
         if model.cost is not None:
             bits.append(fmt_cost(model.cost))
         rows.append(_tr(model.model_name, " · ".join(bits)))
-    if not usage.models:
+    if usage.show_request_ranking and not usage.models:
         rows.append(_tr("模型", f"近 {usage.window_days} 天暂无调用记录"))
     totals = [
         f"{capped(fmt_int(usage.total_requests), usage.totals_capped)} 次",
@@ -332,6 +357,57 @@ def _model_table_rows(s: Snapshot) -> str:
         totals.append(capped(fmt_cost(usage.total_cost), usage.totals_capped))
     rows.append(_tr("合计", " · ".join(totals)))
     return "".join(rows)
+
+
+def _cost_label(s: Snapshot) -> str:
+    scope = _cost_scope_label(s)
+    return f"花费排行 · 近 {s.usage.window_days} 天" + (f" · {scope}" if scope else "")
+
+
+def _cost_block(s: Snapshot) -> str:
+    """dashboard 用的花费排行整框；花费排行关闭或花费被隐藏时为空串。"""
+
+    usage = s.usage
+    if not usage.show_cost_ranking:
+        return ""
+    if usage.total_requests is None:
+        body = f'<div class="mf-empty">{UNKNOWN}</div>'
+    elif not usage.models_by_cost:
+        body = f'<div class="mf-empty">近 {usage.window_days} 天暂无花费记录</div>'
+    else:
+        top = max(model.cost or 0.0 for model in usage.models_by_cost) or 1.0
+        body = "".join(
+            '<div class="mf-cost-row">'
+            f'<span class="mf-model-name">{_e(model.model_name)}</span>'
+            f'<div class="mf-model-bar"><i style="width:{round((model.cost or 0.0) / top * 100)}%"></i></div>'
+            f'<span class="mf-cost-val">{_e(fmt_cost(model.cost or 0.0))}</span>'
+            f'<span class="mf-model-req">{_e(fmt_int(model.requests))} 次</span>'
+            f'<span class="mf-model-tok">{_e(fmt_tokens(model.tokens))}</span>'
+            "</div>"
+            for model in usage.models_by_cost
+        )
+    return f'<div class="box mf-cost"><div class="lbl">{_e(_cost_label(s))}</div>{body}</div>'
+
+
+def _cost_table(s: Snapshot) -> str:
+    """sheet 用的花费排行小节；关闭时为空串。"""
+
+    usage = s.usage
+    if not usage.show_cost_ranking:
+        return ""
+    if usage.total_requests is None:
+        rows = _tr("模型", UNKNOWN)
+    elif not usage.models_by_cost:
+        rows = _tr("模型", f"近 {usage.window_days} 天暂无花费记录")
+    else:
+        rows = "".join(
+            _tr(
+                model.model_name,
+                f"{fmt_cost(model.cost or 0.0)} · {fmt_int(model.requests)} 次 · {fmt_tokens(model.tokens)} tok",
+            )
+            for model in usage.models_by_cost
+        )
+    return f'<div class="sec">{_e(_cost_label(s))}</div><table>{rows}</table>'
 
 
 def _hardware_table(s: Snapshot) -> str:
@@ -352,6 +428,8 @@ def build_fragments(s: Snapshot) -> dict[str, str]:
         "runtime_rows_html": _runtime_rows(s),
         "model_table_rows_html": _model_table_rows(s),
         "hardware_table_html": _hardware_table(s),
+        "cost_block_html": _cost_block(s),
+        "cost_table_html": _cost_table(s),
         "maimai_logo_svg": maimai_svg(),
     }
 
