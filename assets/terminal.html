@@ -1,0 +1,43 @@
+<!--
+  maifetch 状态卡片模板：terminal（neofetch 风格 · 呆萌像素麦麦）
+  约定同 dashboard。本模板用到：maimai_logo_svg nickname host_version sdk_version uptime_short plugin_count
+             tool_count platforms top_model top_model_more total_tokens total_requests window_days hardware_lines_html
+  配色取自麦麦形象：身体 #ef8d24 · 肚皮 #fcfdfc · 瞳孔/嘴 #2f130a · 嫩芽/尾鳍 #86e541
+-->
+<style>
+  #card { width: 760px; box-sizing: border-box; background: #1e1f24; color: #c9ccd3; border-radius: 14px;
+    padding: 18px 22px 16px; font-family: "JetBrains Mono", "Noto Sans SC", ui-monospace, monospace; font-size: 15px;
+    line-height: 1.6; }
+  #card * { box-sizing: border-box; margin: 0; padding: 0; }
+  #card .bar { display: flex; gap: 7px; margin-bottom: 14px; }
+  #card .bar i { width: 11px; height: 11px; border-radius: 50%; background: #44464f; display: block; }
+  #card .row { display: flex; gap: 26px; align-items: flex-start; }
+  #card .logo { flex-shrink: 0; padding-top: 6px; }
+  #card .info { min-width: 0; flex: 1; }
+  #card .info > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #card .t { color: #e6e8ec; font-weight: 700; }
+  #card .at { color: #86e541; }
+  #card .k { color: #ef8d24; }
+  #card .dim { color: #6b6f7a; }
+  #card .sw { display: flex; margin-top: 12px; }
+  #card .sw span { width: 26px; height: 13px; display: block; }
+</style>
+<div id="card">
+  <div class="bar"><i></i><i></i><i></i></div>
+  <div class="row">
+    <div class="logo">{maimai_logo_svg}</div>
+    <div class="info">
+      <div><span class="t">{nickname}</span><span class="at">@</span><span class="t">MaiBot</span></div>
+      <div class="dim">──────────────────────</div>
+      <div><span class="k">Host</span>: MaiBot {host_version}</div>
+      <div><span class="k">SDK</span>: {sdk_version}</div>
+      <div><span class="k">Online</span>: {uptime_short}</div>
+      <div><span class="k">Plugins</span>: {plugin_count} ({tool_count} tools)</div>
+      <div><span class="k">Platforms</span>: {platforms}</div>
+      <div><span class="k">Model</span>: {top_model} {top_model_more}</div>
+      <div><span class="k">Usage</span>: {total_tokens} tok / {total_requests} req ({window_days}d)</div>
+      {hardware_lines_html}
+      <div class="sw"><span style="background:#2f130a"></span><span style="background:#ef8d24"></span><span style="background:#f6b866"></span><span style="background:#fcfdfc"></span><span style="background:#86e541"></span><span style="background:#4f9a1f"></span></div>
+    </div>
+  </div>
+</div>

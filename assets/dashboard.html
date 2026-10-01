@@ -1,0 +1,63 @@
+<!--
+  maifetch 状态卡片模板：dashboard（默认 · 紧凑仪表盘）
+  约定：根元素必须是 id="card"（截图选择器）；占位符写作 花括号+名称，完整列表见 README「模板占位符」。
+  本模板用到：nickname_initial nickname host_version sdk_version platforms tiles_html window_days
+             model_rows_html plugin_list_html hardware_block_html timezone local_time plugin_version
+  注意：不要在 HTML 注释里写带花括号的占位符，它们同样会被替换。
+-->
+<style>
+  #card { width: 720px; box-sizing: border-box; padding: 22px; border-radius: 16px; background: #f6f7f9;
+    border: 1px solid #e2e4e8; color: #23252a; font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+  #card * { box-sizing: border-box; margin: 0; padding: 0; }
+  #card .hd { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  #card .av { width: 52px; height: 52px; border-radius: 12px; background: #d9dde4; color: #596070; display: flex;
+    align-items: center; justify-content: center; font-size: 24px; font-weight: 700; flex-shrink: 0; }
+  #card .name { font-size: 22px; font-weight: 700; }
+  #card .sub { color: #7b808b; font-size: 14px; }
+  #card .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  #card .mf-tile { background: #fff; border: 1px solid #e4e6ea; border-radius: 10px; padding: 10px 12px; min-width: 0; }
+  #card .mf-tile b { display: block; font-size: 22px; font-weight: 700; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; }
+  #card .mf-tile span { color: #7b808b; font-size: 13px; }
+  #card .box, #card .mf-hw { background: #fff; border: 1px solid #e4e6ea; border-radius: 10px; padding: 10px 14px;
+    margin-bottom: 14px; }
+  #card .lbl, #card .mf-hw-title { color: #7b808b; font-size: 13px; margin-bottom: 6px; }
+  #card .mf-model-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px 84px 72px auto; gap: 10px;
+    align-items: center; padding: 4px 0; }
+  #card .mf-model-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #card .mf-model-bar { height: 6px; background: #e9ebef; border-radius: 3px; overflow: hidden; }
+  #card .mf-model-bar i { display: block; height: 100%; background: #7d8799; }
+  #card .mf-model-req, #card .mf-model-tok, #card .mf-model-cost { text-align: right; color: #4a4e57; font-size: 14px;
+    white-space: nowrap; }
+  #card .mf-empty { color: #9a9ea8; font-size: 14px; }
+  #card .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  #card .mf-plugins:has(.chips:empty) { display: none; }
+  #card .mf-chip { background: #eef0f3; border-radius: 6px; padding: 2px 9px; font-size: 13px; color: #4a4e57; }
+  #card .mf-chip.mf-more { color: #7b808b; }
+  #card .mf-hw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+  #card .mf-hw-row { display: flex; gap: 10px; font-size: 14px; min-width: 0; }
+  #card .mf-k { color: #7b808b; flex-shrink: 0; }
+  #card .mf-v { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #card .ft { display: flex; justify-content: space-between; color: #9a9ea8; font-size: 12px; }
+</style>
+<div id="card">
+  <div class="hd">
+    <div class="av">{nickname_initial}</div>
+    <div>
+      <div class="name">{nickname}</div>
+      <div class="sub">MaiBot {host_version} · SDK {sdk_version} · {platforms}</div>
+    </div>
+  </div>
+  <div class="tiles">{tiles_html}</div>
+  <div class="box">
+    <div class="lbl">模型用量 · 近 {window_days} 天</div>
+    {model_rows_html}
+  </div>
+  <div class="box mf-plugins">
+    <div class="lbl">已加载插件</div>
+    <div class="chips">{plugin_list_html}</div>
+  </div>
+  {hardware_block_html}
+  <div class="ft"><span>{timezone} · {local_time}</span><span>maifetch {plugin_version}</span></div>
+</div>

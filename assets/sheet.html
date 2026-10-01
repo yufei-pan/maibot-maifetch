@@ -1,0 +1,31 @@
+<!--
+  maifetch 状态卡片模板：sheet（素净信息单）
+  约定同 dashboard。本模板用到：nickname host_version sdk_version identity_rows_html runtime_rows_html
+             window_days model_table_rows_html hardware_table_html plugin_version generated_at
+-->
+<style>
+  #card { width: 680px; box-sizing: border-box; background: #fbfbfa; color: #2a2b2e; border: 1px solid #e3e3e0;
+    border-radius: 14px; padding: 22px 26px; font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  #card * { box-sizing: border-box; margin: 0; padding: 0; }
+  #card .hd { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #e6e6e3;
+    padding-bottom: 10px; margin-bottom: 4px; }
+  #card .hd .n { font-size: 24px; font-weight: 700; }
+  #card .hd .v { font-size: 14px; color: #7a7c82; }
+  #card .sec { font-size: 13px; letter-spacing: .08em; color: #8a8c92; margin: 14px 0 4px; }
+  #card table { width: 100%; border-collapse: collapse; }
+  #card td { padding: 3px 0; vertical-align: top; }
+  #card td:first-child { color: #6f7177; width: 128px; padding-right: 12px; }
+  #card .ft { margin-top: 14px; font-size: 12px; color: #9a9ca1; text-align: right; }
+</style>
+<div id="card">
+  <div class="hd"><span class="n">{nickname}</span><span class="v">MaiBot {host_version} · SDK {sdk_version}</span></div>
+  <div class="sec">身份</div>
+  <table>{identity_rows_html}</table>
+  <div class="sec">运行</div>
+  <table>{runtime_rows_html}</table>
+  <div class="sec">模型与用量 · 近 {window_days} 天</div>
+  <table>{model_table_rows_html}</table>
+  {hardware_table_html}
+  <div class="ft">maifetch {plugin_version} · {generated_at}</div>
+</div>
