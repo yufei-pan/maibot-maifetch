@@ -94,12 +94,21 @@ maibot-maifetch/
 ├─ plugin.py             glue only: MaiFetchPlugin (components, lifecycle, config normalize/migrate, refresher task)
 ├─ maifetch/             uniquely named package (shared Runner process — no generic module names)
 │  ├─ __init__.py
+│  ├─ config.py          config models, normalize/clamp, Settings snapshot, shipped-config copy
 │  ├─ snapshot.py        frozen dataclasses (Identity / Runtime / ModelUsage / Usage / Hardware / Snapshot)
-│  ├─ collect.py         collect_snapshot(ctx, settings) → Snapshot   (the ONLY module that touches ctx)
-│  ├─ hardware.py        collect_hardware(toggles) → Hardware          (pure stdlib, no ctx)
-│  ├─ redact.py          apply_visibility(snapshot, visibility) → Snapshot   (single point where toggles apply)
-│  ├─ text.py            format_tool_text / format_user_text / format_injection
-│  └─ card.py            build_card_html(snapshot, template_str, ...) → html; fragments; data_json
+│  ├─ fmt.py             number/size/duration/time formatting shared by text + card
+│  ├─ collect.py         collect_snapshot(ctx, settings) → Snapshot   (the ONLY module besides plugin.py that touches ctx)
+│  ├─ hardware.py        collect_hardware(disk_path) → Hardware        (pure stdlib, no ctx)
+│  ├─ redact.py          apply_visibility(snapshot, visibility, hw) → Snapshot   (single point where toggles apply)
+│  ├─ text.py            format_tool_text / format_user_text / format_injection; tool-input parsing
+│  ├─ logo.py            20×14 pixel 麦麦 grid + maimai_svg()
+│  ├─ card.py            build_card_html(snapshot, template_str, font_css) → html; scalars; fragments; data_json
+│  ├─ render.py          template resolve/load, embedded font CSS, PNG→lossless WebP
+│  ├─ inject.py          apply_injection(kwargs, text) for items schema v1 / legacy messages
+│  ├─ cooldown.py        per-stream Cooldown
+│  ├─ registration.py    tool description, command pattern/arg parsing, get_components patching
+│  └─ sample.py          sample Snapshot for tests and template preview
+├─ tools/preview_cards.py  local template preview (Playwright), dev-only
 ├─ assets/
 │  ├─ dashboard.html     default
 │  ├─ terminal.html
@@ -142,6 +151,8 @@ Rule: every consumer reads a **redacted** `Snapshot`. Nothing formats raw collec
 ### 1. Refresher (background task)
 
 - Started in `on_load` (first refresh runs immediately), loops every `injection.refresh_minutes` (default 10).
+  If a refresh raises or reports failed sources while no good cache exists yet (e.g. Host capabilities not ready at
+  load), the next attempt runs after 30 s instead of the full interval.
 - Also triggered by `on_config_update(scope=self)`.
 - On success: replace cache `{snapshot, injection_text}`. On failure: keep previous cache, log warning.
 - Cancelled and awaited in `on_unload`.
@@ -182,11 +193,12 @@ Rule: every consumer reads a **redacted** `Snapshot`. Nothing formats raw collec
 - Budget: collection ≤ ~3 s (concurrent, per-source timeout) + render ≤ `render_timeout_ms` (20 s) + encode/send —
   well under the ~60 s tool RPC limit.
 
-### 4. Command — `/maifetch`
+### 4. Command — `/maifetch` (component name `maifetch_card`; the tool owns the name `maifetch`)
 
 - Pattern built in `get_components()` from config:
-  `^/(?:maifetch|<alias1>|<alias2>…)(?:\s+(?P<arg>\S+))?\s*$` (aliases `re.escape`d, leading `/` stripped/added
-  consistently). Alias changes take effect on plugin reload (registration-time), documented in the WebUI description.
+  `^(?:/maifetch|<alias1>|<alias2>…)(?:\s+(?P<arg>\S+))?\s*$` (aliases `re.escape`d and used **literally** — the
+  operator includes a leading `/` if they want one). Alias changes take effect on plugin reload (registration-time),
+  documented in the WebUI description.
 - Args:
   - none → card with configured template
   - `文字` / `text` → text version (`format_user_text`)
@@ -281,7 +293,10 @@ class Snapshot:
 ### Data sources (`collect.py`)
 
 All RPCs run concurrently via `asyncio.gather`, each wrapped in `asyncio.wait_for(…, 3.0)`; an exception/timeout
-records the source name in `failed_sources` and leaves its fields `None`.
+records the source name in `failed_sources` and leaves its fields `None`. Every source goes through
+`ctx.call_capability(name, **args)` directly: on Host failure it returns the raw `{"success": False, "error": …}` dict,
+which the collector treats as a failure (some SDK convenience proxies, e.g. `statistics.local.models`, turn that into
+`[]`, which would wrongly render as "0 次").
 
 | Source key | Call |
 |---|---|
@@ -378,9 +393,9 @@ Substitution is impression-card style: literal `{key}` replacement (never `str.f
 `id="card"` (screenshot selector). Each bundled template starts with a comment header listing every placeholder and
 fragment class; the README carries the full table.
 
-- **Scalars** (HTML-escaped; hidden → `""`, unknown → `未知`):
-  `{nickname}` `{alias_names}` `{platforms}` `{account}` `{local_time}` `{timezone}`
-  `{host_version}` `{sdk_version}` `{plugin_version}` `{uptime}` `{online_since}`
+- **Scalars** (HTML-escaped; hideable fields → `""` when absent, others → `未知`):
+  `{nickname}` `{nickname_initial}` `{alias_names}` `{platforms}` `{account}` `{local_time}` `{timezone}`
+  `{host_version}` `{sdk_version}` `{plugin_version}` `{uptime}` `{uptime_short}` `{online_since}`
   `{plugin_count}` `{tool_count}` `{model_tasks}` `{window_days}`
   `{total_requests}` `{total_tokens}` `{total_cost}` `{total_messages}` `{top_model}` `{top_model_more}`
   `{hw_os}` `{hw_kernel}` `{hw_arch}` `{hw_cpu}` `{hw_memory}` `{hw_disk}` `{hw_python}` `{hw_uptime}` `{hw_virt}`
@@ -394,6 +409,9 @@ fragment class; the README carries the full table.
   - `{hardware_block_html}` — `.mf-hw` with `.mf-hw-row` (`.mf-k` / `.mf-v`) per visible field; `""` when off.
   - `{hardware_lines_html}` — terminal-style `<div><span class="k">Key</span>: value</div>` lines preceded by a
     `.dim` separator; `""` when off.
+  - Sheet tables: `{identity_rows_html}`, `{runtime_rows_html}`, `{model_table_rows_html}` (`<tr><td>…</td><td>…</td></tr>`
+    rows; hidden fields produce no row) and `{hardware_table_html}` (`<div class="sec">硬件</div><table>…</table>` or `""`).
+  - `{maimai_logo_svg}` — the pixel 麦麦 (below) as inline SVG, generated from one grid constant in `maifetch/logo.py`.
 - **`{data_json}`** — redacted snapshot as JSON (`ensure_ascii=False`, `</` escaped as `<\/`), for templates that
   build themselves with inline JS inside `<script type="application/json" id="maifetch-data">{data_json}</script>`.
 
@@ -420,8 +438,8 @@ All flat, understated; widths are CSS px at `scale = 1.0`.
 Hand-drawn 20×14 "dorky" Sacabambaspis 麦麦 (reference: `MaiBot/depends-data/maimai-v2.png`, top figure):
 cross-eyed googly eyes (pupils face each other), tiny beak on the orange/white line, lopsided three-lobe clover tail,
 two-leaf sprout, no outline. Rendered as inline `<svg viewBox="0 0 20 14" shape-rendering="crispEdges">` with
-run-length `<rect>`s, displayed at 6 px/cell (120 × 84). Stored directly in `terminal.html` so custom templates can
-replace it.
+run-length `<rect>`s, displayed at 6 px/cell (120 × 84). Generated by `maifetch/logo.py` and exposed as the
+`{maimai_logo_svg}` placeholder; `terminal.html` uses it, custom templates may use or replace it.
 
 ```
 ...........gg.gg....
@@ -453,10 +471,12 @@ rendering never needs the network. Ship `assets/fonts/OFL.txt` (Noto Sans SC and
 
 ## Configuration
 
-`config_version = "1.0.0"`. Ships `config.default.toml`; reuses the workspace helpers pattern from world-clock
-(`_ensure_shipped_config_present`, restore Runner-generated bare config, `_coerce_webui_blank_optionals`,
-`_normalize_*_config` + `merge_plugin_config_data` / `validate_plugin_config`, `_dump_config_for_persist`). Each
-section is a `PluginConfigBase` with `__ui_label__` / `__ui_icon__` / `__ui_order__` and zh-CN `description`s.
+`config_version = "1.0.0"`. Ships `config.default.toml`, copied to `config.toml` by `create_plugin()` when missing
+(world-clock's `_ensure_shipped_config_present`; no bare-config restore needed for a plugin that ships the template
+from its first release). `normalize_plugin_config` runs maifetch normalization (defaults merge, numeric
+coercion/clamping, format/template/alias cleanup, version stamp) before the SDK's. No optional (`| None`) fields, so
+no WebUI blank-optional coercion is needed; blank/invalid numbers fall back to defaults. Each section is a
+`PluginConfigBase` with `__ui_label__` / `__ui_icon__` / `__ui_order__` and zh-CN `description`s.
 
 ```toml
 [plugin]
