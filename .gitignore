@@ -11,6 +11,8 @@ config.local.toml
 
 # 运行期配置（由 Host/WebUI 写回；模板见 config.default.toml）
 config.toml
+# WebUI 保存配置时自动生成的备份
+config_back/
 
 # 本地模板预览输出
 preview/
