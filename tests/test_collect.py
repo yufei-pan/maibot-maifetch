@@ -56,6 +56,7 @@ def test_top_models_limit() -> None:
     snap = _collect(FakeCtx(), {"usage": {"top_models": 1}})
     assert [m.model_name for m in snap.usage.models] == ["deepseek-v3.2"]
     assert snap.usage.total_requests == 1774
+    assert snap.usage.model_count == 3
 
 
 def test_stats_requested_with_cap_and_window() -> None:

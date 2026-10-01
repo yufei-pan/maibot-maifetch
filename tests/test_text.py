@@ -74,7 +74,7 @@ def test_tool_text_all_blocks_and_hint() -> None:
         "【插件】",
         "【模型任务】",
         "【模型用量·近 7 天】",
-        "【合计·近 7 天】",
+        "【合计·近 7 天（全部模型）】",
         "【硬件】",
     ):
         assert tag in text
@@ -83,7 +83,7 @@ def test_tool_text_all_blocks_and_hint() -> None:
     assert "本次在线 3 天 4 小时（自 09-28 10:02）" in text
     assert "12 个已加载、31 个工具：com.0-hz.corpus-callosum@1.3.4" in text
     assert "deepseek-v3.2 1,284 次/1.86M tok/2.1s" in text
-    assert "【合计·近 7 天】1,774 次请求、2.41M tokens、3,906 条消息" in text
+    assert "【合计·近 7 天（全部模型）】1,774 次请求、2.41M tokens、3,906 条消息" in text
     assert text.splitlines()[-1] == REPLY_HINT
 
 
@@ -167,3 +167,21 @@ def test_unknown_platforms_are_omitted() -> None:
     text = format_tool_text(snap, "identity")
     assert "平台" not in text
     assert "昵称：麦麦" in text
+
+
+def test_models_block_says_all_models_listed() -> None:
+    assert "【模型用量·近 7 天】全部 3 个模型：deepseek-v3.2" in format_tool_text(sample_snapshot(), "models")
+
+
+def test_models_block_says_only_top_k_of_total() -> None:
+    snap = sample_snapshot()
+    snap = replace(snap, usage=replace(snap.usage, model_count=12))
+    text = format_tool_text(snap, "usage")
+    assert "【模型用量·近 7 天】调用次数最多的前 3 个（共 12 个模型，其余未列出）：deepseek-v3.2" in text
+    assert "【合计·近 7 天（全部模型）】1,774 次请求" in text
+
+
+def test_models_block_capped_model_count() -> None:
+    snap = sample_snapshot()
+    snap = replace(snap, usage=replace(snap.usage, model_count=50, totals_capped=True))
+    assert "（共 50+ 个模型，其余未列出）" in format_tool_text(snap, "models")

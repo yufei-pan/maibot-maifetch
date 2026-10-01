@@ -181,7 +181,9 @@ def parse_model_tasks(raw: Any) -> tuple[str, ...]:
     return _str_tuple(raw)
 
 
-def parse_models(raw: Any, top_k: int) -> tuple[tuple[ModelUsage, ...], int, int, float, bool]:
+def parse_models(raw: Any, top_k: int) -> tuple[tuple[ModelUsage, ...], int, int, int, float, bool]:
+    """返回 (前 top_k 个模型, 模型总数, 总请求, 总 tokens, 总花费, 是否触顶)；合计覆盖全部返回的模型。"""
+
     if not isinstance(raw, list):
         raise SourceError("模型统计格式异常")
     rows = [
@@ -199,7 +201,7 @@ def parse_models(raw: Any, top_k: int) -> tuple[tuple[ModelUsage, ...], int, int
     total_requests = sum(item.requests for item in rows)
     total_tokens = sum(item.tokens for item in rows)
     total_cost = sum(item.cost or 0.0 for item in rows)
-    return tuple(rows[:top_k]), total_requests, total_tokens, total_cost, len(raw) >= STATS_ROW_CAP
+    return tuple(rows[:top_k]), len(rows), total_requests, total_tokens, total_cost, len(raw) >= STATS_ROW_CAP
 
 
 def parse_messages(raw: Any) -> tuple[int, bool]:
@@ -293,9 +295,10 @@ async def collect_snapshot(
     )
     usage_fields: dict[str, Any] = {}
     if models_parsed:
-        top, total_requests, total_tokens, total_cost, totals_capped = models_parsed
+        top, model_count, total_requests, total_tokens, total_cost, totals_capped = models_parsed
         usage_fields = {
             "models": top,
+            "model_count": model_count,
             "total_requests": total_requests,
             "total_tokens": total_tokens,
             "total_cost": total_cost,

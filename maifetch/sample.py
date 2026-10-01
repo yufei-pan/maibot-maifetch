@@ -56,6 +56,7 @@ def sample_snapshot(*, hardware: bool = True, cost: bool = False, account: bool 
         usage=Usage(
             window_days=7,
             models=models,
+            model_count=len(models),
             total_requests=1774,
             total_tokens=2_410_000,
             total_cost=4.87 if cost else None,

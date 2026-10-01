@@ -136,7 +136,17 @@ def _models_block(s: Snapshot) -> str:
         if model.cost is not None:
             bits.append(fmt_cost(model.cost))
         items.append(f"{model.model_name} " + "/".join(bits))
-    return title + "；".join(items)
+    return title + _models_scope(usage.model_count, len(usage.models), usage.totals_capped) + "；".join(items)
+
+
+def _models_scope(model_count: int | None, listed: int, is_capped: bool) -> str:
+    """说明这里列的是全部模型还是只是前几个，避免把列出的数加起来与「合计」对不上。"""
+
+    if model_count is None:
+        return ""
+    if model_count <= listed and not is_capped:
+        return f"全部 {model_count} 个模型："
+    return f"调用次数最多的前 {listed} 个（共 {capped(str(model_count), is_capped)} 个模型，其余未列出）："
 
 
 def _totals_block(s: Snapshot) -> str:
@@ -149,7 +159,7 @@ def _totals_block(s: Snapshot) -> str:
         parts.append(f"{capped(fmt_int(usage.total_messages), usage.messages_capped)} 条消息")
     if usage.total_cost is not None:
         parts.append(f"花费 {capped(fmt_cost(usage.total_cost), usage.totals_capped)}")
-    return f"【合计·近 {usage.window_days} 天】" + ("、".join(parts) if parts else UNKNOWN)
+    return f"【合计·近 {usage.window_days} 天（全部模型）】" + ("、".join(parts) if parts else UNKNOWN)
 
 
 def _hardware_block(s: Snapshot) -> str:

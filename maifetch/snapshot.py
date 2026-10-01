@@ -47,7 +47,8 @@ class ModelUsage:
 @dataclass(frozen=True)
 class Usage:
     window_days: int = 7
-    models: tuple[ModelUsage, ...] = ()
+    models: tuple[ModelUsage, ...] = ()  # 只是调用次数最多的前 top_models 个
+    model_count: int | None = None  # 统计窗口内有调用记录的模型总数（合计覆盖全部这些模型）
     total_requests: int | None = None
     total_tokens: int | None = None
     total_cost: float | None = None

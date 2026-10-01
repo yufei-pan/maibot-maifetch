@@ -273,6 +273,7 @@ class ModelUsage:
 class Usage:
     window_days: int
     models: tuple[ModelUsage, ...]      # top-K by requests
+    model_count: int | None             # models with usage rows in the window (totals cover all of them)
     total_requests: int | None          # summed over all rows fetched (Host cap 50), not only top-K
     total_tokens: int | None
     total_cost: float | None            # hidden by default
@@ -377,8 +378,9 @@ Sectioned plain text, e.g.:
 【运行】MaiBot 1.3.1 · 插件 SDK 2.8.2 · maifetch 0.1.0；本次在线 3 天 4 小时（自 09-28 10:02）
 【插件】12 个已加载、31 个工具：maibook@0.1.3、fetch-url@0.4.1、…
 【模型任务】replyer、planner、utils、vlm、voice
-【模型用量·近 7 天】deepseek-v3.2 1,284 次/1.86M tok/2.1s；qwen3-235b 402 次/0.41M tok/3.4s；…
-【合计·近 7 天】1,774 次请求、2.41M tokens、3,906 条消息
+【模型用量·近 7 天】调用次数最多的前 5 个（共 12 个模型，其余未列出）：deepseek-v3.2 1,284 次/1.86M tok/2.1s；…
+                                        ← all listed: 「全部 3 个模型：」; capped: 「共 50+ 个模型」
+【合计·近 7 天（全部模型）】1,774 次请求、2.41M tokens、3,906 条消息
 【硬件】（仅开启时）Debian GNU/Linux 12 x86_64 · 内核 6.8.12-pve · Docker · AMD Ryzen 9 7950X ×32 · 内存 11.2/62.6 GiB · 磁盘 214/937 GiB · Python 3.12.7
 （数据源未响应：…）            ← only when failed_sources non-empty
 （回复用户时，请把与问题相关的事实写进 reply 工具的 reply_reference，回复器看不到本工具结果。）
