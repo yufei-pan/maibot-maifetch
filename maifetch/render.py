@@ -31,8 +31,10 @@ def resolve_template_path(plugin_dir: Path, configured: str) -> Path:
 
 
 def load_template(plugin_dir: Path, configured: str, bundled_name: str | None, logger: Any) -> str:
-    path = bundled_template_path(plugin_dir, bundled_name) if bundled_name else resolve_template_path(
-        plugin_dir, configured
+    path = (
+        bundled_template_path(plugin_dir, bundled_name)
+        if bundled_name
+        else resolve_template_path(plugin_dir, configured)
     )
     try:
         return path.read_text(encoding="utf-8")

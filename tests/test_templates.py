@@ -27,7 +27,7 @@ def test_template_renders_completely(name: str) -> None:
 
 @pytest.mark.parametrize("name", NAMES)
 def test_header_comment_has_no_placeholders(name: str) -> None:
-    for comment in re.findall(r"<!--(.*?)-->", _template(name), re.S):
+    for comment in re.findall(r"<!--(.*?)-->", _template(name), re.DOTALL):
         assert re.search(r"\{[a-z_]+\}", comment) is None
 
 

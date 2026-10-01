@@ -109,8 +109,7 @@ def _plugins_block(s: Snapshot) -> str:
         head += f"、{runtime.tool_count} 个工具"
     if runtime.plugins:
         head += "：" + "、".join(
-            f"{plugin.plugin_id}@{plugin.version}" if plugin.version else plugin.plugin_id
-            for plugin in runtime.plugins
+            f"{plugin.plugin_id}@{plugin.version}" if plugin.version else plugin.plugin_id for plugin in runtime.plugins
         )
     return f"【插件】{head}"
 

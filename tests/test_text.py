@@ -68,7 +68,15 @@ def test_unknown_section_falls_back_with_note() -> None:
 
 def test_tool_text_all_blocks_and_hint() -> None:
     text = format_tool_text(sample_snapshot(), "all")
-    for tag in ("【身份】", "【运行】", "【插件】", "【模型任务】", "【模型用量·近 7 天】", "【合计·近 7 天】", "【硬件】"):
+    for tag in (
+        "【身份】",
+        "【运行】",
+        "【插件】",
+        "【模型任务】",
+        "【模型用量·近 7 天】",
+        "【合计·近 7 天】",
+        "【硬件】",
+    ):
         assert tag in text
     assert "昵称：麦麦（别名：小麦）" in text
     assert "MaiBot 1.3.1 · 插件 SDK 2.8.2 · maifetch 0.1.0" in text

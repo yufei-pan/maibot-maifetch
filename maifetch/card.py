@@ -126,9 +126,7 @@ def build_scalars(s: Snapshot) -> dict[str, str]:
         "model_tasks": _v("、".join(runtime.model_tasks) if runtime.model_tasks else None),
         "window_days": _e(str(usage.window_days)),
         "total_requests": _v(capped(fmt_int(usage.total_requests), usage.totals_capped) if totals_known else None),
-        "total_tokens": _v(
-            capped(fmt_tokens(usage.total_tokens or 0), usage.totals_capped) if totals_known else None
-        ),
+        "total_tokens": _v(capped(fmt_tokens(usage.total_tokens or 0), usage.totals_capped) if totals_known else None),
         "total_cost": _v(
             capped(fmt_cost(usage.total_cost), usage.totals_capped) if usage.total_cost is not None else None,
             hideable=True,
@@ -347,9 +345,7 @@ def build_fragments(s: Snapshot) -> dict[str, str]:
 def build_data_json(s: Snapshot) -> str:
     """脱敏后的完整快照 JSON；转义 < 与 >，可安全放进 <script> 或 HTML 注释。"""
 
-    return (
-        json.dumps(snapshot_to_dict(s), ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e")
-    )
+    return json.dumps(snapshot_to_dict(s), ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e")
 
 
 def fill_template(template: str, values: Mapping[str, str]) -> str:

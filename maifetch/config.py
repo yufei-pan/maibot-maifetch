@@ -201,7 +201,7 @@ def _coerce_number(value: Any, as_float: bool) -> float | int | None:
             return None
     else:
         return None
-    return number if as_float else int(round(number))
+    return number if as_float else round(number)
 
 
 def normalize_config_dict(raw: Mapping[str, Any] | None) -> tuple[dict[str, Any], list[str]]:

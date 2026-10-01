@@ -7,9 +7,9 @@ import re
 from typing import Any
 
 import pytest
+from fakes import FakeCtx
 
 import plugin as maifetch_plugin
-from fakes import FakeCtx
 from maifetch.text import REPLY_HINT
 
 SYSTEM_ITEMS = [
@@ -239,7 +239,11 @@ def test_command_render_exception_falls_back_to_text() -> None:
 def test_command_missing_template_uses_dashboard(caplog: pytest.LogCaptureFixture) -> None:
     ctx = FakeCtx()
     with caplog.at_level(logging.WARNING):
-        run(make_plugin(ctx, {"card": {"template": "nope/missing.html"}}).cmd_maifetch(stream_id="s1", matched_groups={}))
+        run(
+            make_plugin(ctx, {"card": {"template": "nope/missing.html"}}).cmd_maifetch(
+                stream_id="s1", matched_groups={}
+            )
+        )
     assert 'class="tiles"' in ctx.rendered_html[0]
     assert "模板读取失败" in caplog.text
 

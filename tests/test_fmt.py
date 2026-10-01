@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -55,6 +55,6 @@ def test_small_formatters() -> None:
     assert fmt_latency(2.06) == "2.1s"
     assert capped("1,774", True) == "1,774+"
     assert capped("1,774", False) == "1,774"
-    moment = datetime(2026, 9, 28, 10, 2)
+    moment = datetime(2026, 9, 28, 10, 2, tzinfo=timezone.utc)
     assert fmt_datetime(moment) == "2026-09-28 10:02"
     assert fmt_short_datetime(moment) == "09-28 10:02"

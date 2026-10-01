@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
-import tomllib
 from pathlib import Path
+
+import tomllib
 
 from maifetch.config import (
     BUNDLED_TEMPLATES,
@@ -57,18 +58,14 @@ def test_normalize_clamps_and_recovers_numbers() -> None:
 
 
 def test_normalize_blank_webui_values() -> None:
-    normalized, _ = normalize_config_dict(
-        {"usage": {"window_days": ""}, "card": {"template": "  ", "format": "GIF"}}
-    )
+    normalized, _ = normalize_config_dict({"usage": {"window_days": ""}, "card": {"template": "  ", "format": "GIF"}})
     assert normalized["usage"]["window_days"] == 7
     assert normalized["card"]["template"] == DEFAULT_TEMPLATE
     assert normalized["card"]["format"] == "webp"
 
 
 def test_normalize_aliases_are_literal_and_deduplicated() -> None:
-    normalized, _ = normalize_config_dict(
-        {"command": {"aliases": [" /状态 ", "/状态", "", "/maifetch", "麦麦状态"]}}
-    )
+    normalized, _ = normalize_config_dict({"command": {"aliases": [" /状态 ", "/状态", "", "/maifetch", "麦麦状态"]}})
     assert normalized["command"]["aliases"] == ["/状态", "麦麦状态"]
 
 

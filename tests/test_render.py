@@ -4,8 +4,8 @@ import logging
 from pathlib import Path
 
 import pytest
-
 from fakes import tiny_png
+
 from maifetch.render import (
     bundled_template_path,
     font_face_css,

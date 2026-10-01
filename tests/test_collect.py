@@ -5,9 +5,9 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from fakes import FakeCtx, make_settings
 
 import maifetch.collect as collect_module
-from fakes import FakeCtx, make_settings
 from maifetch.collect import STATS_ROW_CAP, collect_snapshot
 from maifetch.snapshot import Hardware
 
@@ -15,9 +15,7 @@ NOW = datetime(2026, 10, 1, 14, 24).astimezone()
 
 
 def _collect(ctx: FakeCtx, overrides: dict | None = None, tmp: Path = Path(".")):
-    return asyncio.run(
-        collect_snapshot(ctx, make_settings(overrides), plugin_version="0.1.0", plugin_dir=tmp, now=NOW)
-    )
+    return asyncio.run(collect_snapshot(ctx, make_settings(overrides), plugin_version="0.1.0", plugin_dir=tmp, now=NOW))
 
 
 def test_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:

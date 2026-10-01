@@ -55,7 +55,9 @@ def test_detect_virt() -> None:
         detect_virt(container_marker=False, **{**blank, "proc_version": "Linux 5.15.0-microsoft-standard-WSL2"})
         == "WSL"
     )
-    assert detect_virt(container_marker=False, **{**blank, "dmi_vendor": "QEMU", "dmi_product": "Standard PC"}) == "QEMU"
+    assert (
+        detect_virt(container_marker=False, **{**blank, "dmi_vendor": "QEMU", "dmi_product": "Standard PC"}) == "QEMU"
+    )
     assert (
         detect_virt(
             container_marker=False, **{**blank, "dmi_vendor": "Microsoft Corporation", "dmi_product": "Virtual Machine"}
@@ -63,7 +65,9 @@ def test_detect_virt() -> None:
         == "Hyper-V"
     )
     assert (
-        detect_virt(container_marker=False, **{**blank, "dmi_vendor": "Microsoft Corporation", "dmi_product": "Surface"})
+        detect_virt(
+            container_marker=False, **{**blank, "dmi_vendor": "Microsoft Corporation", "dmi_product": "Surface"}
+        )
         is None
     )
     assert detect_virt(container_marker=False, **blank) is None

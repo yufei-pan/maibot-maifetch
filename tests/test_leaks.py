@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import pytest
-
 from fakes import make_settings
+
 from maifetch.card import PLACEHOLDER_KEYS, build_card_html, build_data_json, build_fragments, build_scalars
 from maifetch.redact import apply_visibility
 from maifetch.sample import sample_snapshot

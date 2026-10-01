@@ -70,7 +70,9 @@ def parse_uptime(text: str) -> float | None:
         return None
 
 
-def detect_virt(*, container_marker: bool, cgroup: str, proc_version: str, dmi_vendor: str, dmi_product: str) -> str | None:
+def detect_virt(
+    *, container_marker: bool, cgroup: str, proc_version: str, dmi_vendor: str, dmi_product: str
+) -> str | None:
     if container_marker or any(marker in cgroup.lower() for marker in _CONTAINER_CGROUP_MARKERS):
         return "Docker/容器"
     if "microsoft" in proc_version.lower():

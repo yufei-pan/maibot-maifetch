@@ -52,9 +52,27 @@ def default_responses() -> dict[str, Any]:
         "component.get_all_plugins": lambda **_: sample_plugins(),
         "llm.get_available_models": lambda **_: ["replyer", "planner", "utils", "vlm", "voice"],
         "statistics.local.models": lambda **_: [
-            {"model_name": "qwen3-235b", "request_count": 402, "total_tokens": 410_000, "total_cost": 0.96, "avg_response_time": 3.4},
-            {"model_name": "deepseek-v3.2", "request_count": 1284, "total_tokens": 1_860_000, "total_cost": 3.42, "avg_response_time": 2.1},
-            {"model_name": "glm-4.6v", "request_count": 88, "total_tokens": 140_000, "total_cost": 0.49, "avg_response_time": 4.0},
+            {
+                "model_name": "qwen3-235b",
+                "request_count": 402,
+                "total_tokens": 410_000,
+                "total_cost": 0.96,
+                "avg_response_time": 3.4,
+            },
+            {
+                "model_name": "deepseek-v3.2",
+                "request_count": 1284,
+                "total_tokens": 1_860_000,
+                "total_cost": 3.42,
+                "avg_response_time": 2.1,
+            },
+            {
+                "model_name": "glm-4.6v",
+                "request_count": 88,
+                "total_tokens": 140_000,
+                "total_cost": 0.49,
+                "avg_response_time": 4.0,
+            },
         ],
         "statistics.local.message_trend": lambda **_: {
             "timestamps": ["2026-09-25"],

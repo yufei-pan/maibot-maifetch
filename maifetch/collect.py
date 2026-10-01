@@ -11,6 +11,7 @@ import asyncio
 import os
 from collections.abc import Awaitable, Callable, Mapping
 from datetime import datetime
+from datetime import timezone as dt_timezone
 from pathlib import Path
 from typing import Any
 
@@ -138,7 +139,7 @@ def parse_online_since(record: Any) -> datetime | None:
     elif isinstance(raw, str) and raw.strip():
         value = datetime.fromisoformat(raw.strip())
     elif isinstance(raw, (int, float)) and not isinstance(raw, bool):
-        value = datetime.fromtimestamp(raw)
+        value = datetime.fromtimestamp(raw, tz=dt_timezone.utc)
     else:
         return None
     return value.astimezone() if value.tzinfo is None else value
