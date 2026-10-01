@@ -1,0 +1,62 @@
+# maifetch（麦麦状态）插件配置
+#
+# 各字段留空或不写时使用插件内置默认；数值超出范围会被自动钳制。本插件没有任何密钥。
+
+[plugin]
+# 是否启用插件
+enabled = true
+# 配置版本（插件自动维护，请勿手改）
+config_version = "1.0.0"
+
+[visibility]
+# 可见性：同时作用于规划器工具、规划器提示词注入与状态卡片
+# 显示机器人账号（bot.qq_account）
+show_account = false
+# 显示已加载插件列表（关闭后仍显示插件数量）
+show_plugin_list = true
+# 显示花费（按模型与合计）
+show_cost = false
+
+[usage]
+# 统计最近多少天的用量（1–90）
+window_days = 7
+# 列出用量最高的前几个模型（1–10）
+top_models = 5
+
+[injection]
+# 每次规划前把一段简短的自身信息追加到规划器系统提示词
+enabled = true
+# 后台刷新自身信息摘要的间隔（分钟，1–1440）
+refresh_minutes = 10
+
+[command]
+# /maifetch 之外的额外触发词，按原样匹配（需要斜杠请自己写上），修改后需重载插件生效
+# 例：aliases = ["/状态"]
+aliases = []
+# 同一聊天内发送状态卡片的冷却秒数（0 = 不限制）
+cooldown_seconds = 30
+
+[card]
+# 卡片 HTML 模板：相对插件目录或绝对路径
+# 内置：assets/dashboard.html（默认）、assets/terminal.html、assets/sheet.html
+template = "assets/dashboard.html"
+# 渲染像素比（0.5–3.0）。越大越清晰、图片越大；过大的图片经 NapCat 发送可能被误报失败
+scale = 1.0
+# 图片格式：webp（无损，体积小）或 png
+format = "webp"
+# 单次渲染超时（毫秒，1000–45000）
+render_timeout_ms = 20000
+
+[hardware]
+# 硬件信息（炫耀模式）：默认关闭，避免泄露机器信息。开启后下面各项才生效。
+# 无论如何都不会采集主机名、IP、用户名、路径、序列号。
+enabled = false
+show_os = true
+show_kernel = true
+show_arch = true
+show_cpu = true
+show_memory = true
+show_disk = true
+show_python = true
+show_uptime = true
+show_virt = true
