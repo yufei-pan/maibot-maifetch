@@ -14,8 +14,8 @@ config_version = "1.0.0"
 show_account = false
 # 显示已加载插件列表（关闭后仍显示插件数量）
 show_plugin_list = true
-# 显示花费（按模型与合计）
-show_cost = false
+# 显示花费（按模型与合计）；群聊中任何能使用 /maifetch 或触发工具的人都能看到
+show_cost = true
 
 [usage]
 # 统计最近多少天的用量（1–90）
@@ -48,9 +48,10 @@ format = "webp"
 render_timeout_ms = 20000
 
 [hardware]
-# 硬件信息（炫耀模式）：默认关闭，避免泄露机器信息。开启后下面各项才生效。
+# 硬件信息：在工具回复与状态卡片中显示本机系统、CPU、内存、磁盘等信息。下面各项仅在开启时生效。
+# 注意：群聊中任何能使用 /maifetch 或触发工具的人都能看到这些机器信息；如不希望暴露请设为 false。
 # 无论如何都不会采集主机名、IP、用户名、路径、序列号。
-enabled = false
+enabled = true
 show_os = true
 show_kernel = true
 show_arch = true

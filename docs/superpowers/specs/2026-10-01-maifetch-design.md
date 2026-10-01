@@ -18,7 +18,8 @@ three surfaces:
 2. **Planner injection** — a short, cache-stable summary appended to the planner system prompt on every request.
 3. **`/maifetch` command** — renders a status card image (3 bundled HTML templates + user templates) and sends it.
 
-Host-machine hardware info exists but is **off by default** (opt-in "flex" mode).
+Host-machine hardware info is shown by default; operators who don't want machine details visible in chat turn it
+off as a whole or per field (the WebUI description warns about this).
 
 ## Problem
 
@@ -34,7 +35,7 @@ shareable status image.
 - Usage/cost awareness on request (tokens, requests, messages; cost when enabled).
 - `/maifetch` card image with 3 bundled templates (default: dashboard) and operator-supplied custom templates.
 - Per-field visibility toggles applied uniformly to tool, injection, and card.
-- Optional, narrow, stdlib-only hardware info (default off).
+- Narrow, stdlib-only hardware info (default on, can be turned off as a whole or per field).
 - Plugin-only: no Host/SDK source changes; only published SDK capabilities + documented Host env/hook contracts.
 
 ## Non-goals (v1)
@@ -50,12 +51,12 @@ shareable status image.
 
 | Topic | Choice |
 |---|---|
-| Info scope | MaiBot runtime + models & usage + bot identity/env; hardware opt-in only |
+| Info scope | MaiBot runtime + models & usage + bot identity/env + hardware (default on, can be turned off) |
 | Tool purpose | Answer self-questions, self-grounding, usage/cost awareness |
 | Visibility | Per-field toggles in config; same view for everyone; applies to tool, injection, card |
 | Planner delivery | Tool (pull) **and** short always-on injection (push) |
 | Tool can show image | Yes — `send_card: bool` param (default false); plugin sends via `ctx.send.image` |
-| Hardware | Opt-in (`hardware.enabled = false`), per-field sub-toggles, stdlib only, never in injection |
+| Hardware | Default on (`hardware.enabled = true`, changed after live review), per-field sub-toggles, stdlib only, never in injection; descriptions warn that everyone in the chat can see it |
 | Default card template | Dashboard (compact: identity row + 4 tiles + model table + plugin chips) |
 | Bundled templates | dashboard (default), terminal (neofetch-style, dorky pixel 麦麦), sheet (plain info sheet) |
 | Template engine | `{placeholder}` substitution like impression-card + pre-rendered fragments + `{data_json}` |
@@ -493,7 +494,7 @@ config_version = "1.0.0"
 [visibility]          # 「可见性」— 同时作用于工具、提示注入与状态卡片
 show_account = false       # 机器人账号（bot.qq_account）
 show_plugin_list = true    # 已加载插件列表（关闭后仍显示数量）
-show_cost = false          # 花费（按模型与合计）
+show_cost = true           # 花费（按模型与合计）；默认显示（上线评审后调整）
 
 [usage]               # 「用量统计」
 window_days = 7            # 1–90
@@ -513,8 +514,8 @@ scale = 1.0                # 0.5–3.0；越大越清晰、图片越大（NapCat
 format = "webp"            # webp（无损，体积小）| png
 render_timeout_ms = 20000  # 1000–45000
 
-[hardware]            # 「硬件信息（炫耀模式）」— 默认关闭，避免泄露机器信息
-enabled = false
+[hardware]            # 「硬件信息」— 默认显示；说明中提示群聊中所有人可见，不希望暴露时关闭
+enabled = true
 show_os = true
 show_kernel = true
 show_arch = true

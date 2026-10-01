@@ -23,14 +23,25 @@ def test_defaults_match_spec() -> None:
     assert cfg.plugin.enabled is True
     assert cfg.visibility.show_account is False
     assert cfg.visibility.show_plugin_list is True
-    assert cfg.visibility.show_cost is False
+    assert cfg.visibility.show_cost is True
     assert (cfg.usage.window_days, cfg.usage.top_models) == (7, 5)
     assert (cfg.injection.enabled, cfg.injection.refresh_minutes) == (True, 10)
     assert (cfg.command.aliases, cfg.command.cooldown_seconds) == ([], 30)
     assert cfg.card.template == DEFAULT_TEMPLATE
     assert (cfg.card.scale, cfg.card.format, cfg.card.render_timeout_ms) == (1.0, "webp", 20000)
-    assert cfg.hardware.enabled is False
+    assert cfg.hardware.enabled is True
     assert cfg.hardware.show_cpu is True
+
+
+def test_hardware_texts_warn_without_showoff_wording() -> None:
+    from maifetch.config import HardwareSectionConfig
+
+    assert HardwareSectionConfig.__ui_label__ == "硬件信息"
+    description = HardwareSectionConfig.model_fields["enabled"].description or ""
+    assert "群聊" in description and "关闭" in description
+    shipped = (PLUGIN_DIR / "config.default.toml").read_text(encoding="utf-8")
+    for text in (HardwareSectionConfig.__ui_label__, description, shipped):
+        assert "炫耀" not in text
 
 
 def test_normalize_empty_gives_defaults_without_notes() -> None:

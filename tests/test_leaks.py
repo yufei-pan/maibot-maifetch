@@ -33,7 +33,11 @@ def _surfaces(overrides: dict) -> str:
 @pytest.mark.parametrize(
     ("overrides", "secrets"),
     [
-        ({}, ["123456789", "¥", "3.42", "4.87", "Ryzen", "Debian", "6.8.12-pve", "Docker"]),
+        ({}, ["123456789"]),
+        (
+            {"visibility": {"show_cost": False}, "hardware": {"enabled": False}},
+            ["123456789", "¥", "3.42", "4.87", "Ryzen", "Debian", "6.8.12-pve", "Docker"],
+        ),
         ({"visibility": {"show_plugin_list": False}}, ["fetch-url", "corpus-callosum"]),
         ({"hardware": {"enabled": True, "show_cpu": False, "show_virt": False}}, ["Ryzen", "Docker"]),
     ],

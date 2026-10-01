@@ -1,6 +1,6 @@
 # maifetch（麦麦状态）
 
-让麦麦了解自己的 MaiBot 插件：版本、平台、插件与工具、模型用量、在线时长，开了「炫耀模式」还能晒机器配置。
+让麦麦了解自己的 MaiBot 插件：版本、平台、插件与工具、模型用量与花费、在线时长，以及本机硬件信息。
 
 - **规划器工具 `maifetch`**：用户问「你是什么模型 / 什么版本 / 装了什么插件 / 跑了多久 / 用了多少 token」时，麦麦查真实数据回答，不再凭印象。
 - **规划器注入**：每次规划前，在系统提示词末尾追加一段简短的自身信息（只含慢变事实，不影响提示词缓存），让麦麦知道自己能做什么。
@@ -43,7 +43,7 @@
 | `plugin.enabled` | `true` | 总开关 |
 | `visibility.show_account` | `false` | 显示机器人账号 |
 | `visibility.show_plugin_list` | `true` | 显示插件列表（关闭后仍显示数量） |
-| `visibility.show_cost` | `false` | 显示花费 |
+| `visibility.show_cost` | `true` | 显示花费（群聊中所有人可见） |
 | `usage.window_days` | `7` | 用量统计窗口（1–90 天） |
 | `usage.top_models` | `5` | 列出前几个模型（1–10） |
 | `injection.enabled` | `true` | 规划器注入开关 |
@@ -54,14 +54,14 @@
 | `card.scale` | `1.0` | 渲染像素比（0.5–3.0） |
 | `card.format` | `webp` | `webp`（无损）或 `png` |
 | `card.render_timeout_ms` | `20000` | 渲染超时 |
-| `hardware.enabled` | `false` | 硬件信息总开关（炫耀模式） |
+| `hardware.enabled` | `true` | 硬件信息总开关（群聊中所有人可见） |
 | `hardware.show_*` | `true` | 各硬件字段：os / kernel / arch / cpu / memory / disk / python / uptime / virt |
 
 可见性开关同时作用于工具、注入与卡片：被隐藏的字段不会出现在任何地方。
 
 ## 隐私
 
-- 硬件信息默认关闭；开启后只读系统名称、内核、架构、CPU 型号与核心数、内存、MaiBot 所在磁盘用量、Python 版本、开机时长、容器 / 虚拟机类型。
+- 花费与硬件信息默认显示，群聊中任何能使用 `/maifetch` 或触发工具的人都能看到；不希望公开时关闭 `visibility.show_cost` / `hardware.enabled`，或逐项关闭硬件字段。硬件信息只包含系统名称、内核、架构、CPU 型号与核心数、内存、MaiBot 所在磁盘用量、Python 版本、开机时长、容器 / 虚拟机类型。
 - **无论如何都不会采集**主机名、IP / MAC、用户名、文件路径、挂载列表、序列号、进程。
 - 消息统计只取总数；统计接口返回的其他群聊名称会被立即丢弃，不会出现在任何输出里。
 - 「平台」只显示平台名：`bot.platforms` 里 `平台:账号` 格式的备用账号 ID 会被丢弃；未配置时不显示该项。

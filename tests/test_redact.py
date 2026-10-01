@@ -13,15 +13,22 @@ def _raw():
     return sample_snapshot(hardware=True, cost=True, account=True)
 
 
-def test_defaults_hide_account_cost_and_hardware() -> None:
+def test_defaults_hide_only_account() -> None:
     s = _settings({})
     out = apply_visibility(_raw(), s.visibility, s.hardware)
     assert out.identity.account is None
+    assert out.usage.total_cost == 4.87
+    assert out.hardware is not None and out.hardware.cpu is not None
+    assert out.runtime.plugins is not None
+    assert out.runtime.plugin_count == 12
+
+
+def test_cost_and_hardware_can_be_turned_off() -> None:
+    s = _settings({"visibility": {"show_cost": False}, "hardware": {"enabled": False}})
+    out = apply_visibility(_raw(), s.visibility, s.hardware)
     assert out.usage.total_cost is None
     assert all(m.cost is None for m in out.usage.models)
     assert out.hardware is None
-    assert out.runtime.plugins is not None
-    assert out.runtime.plugin_count == 12
 
 
 def test_everything_visible() -> None:

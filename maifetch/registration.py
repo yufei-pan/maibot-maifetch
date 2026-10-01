@@ -17,7 +17,7 @@ COMMAND_COMPONENT_NAME = "maifetch_card"
 
 SECTION_PARAM_DESCRIPTION = (
     "要查看的部分：all=全部（默认）、identity=身份、runtime=运行与版本、plugins=插件与工具、"
-    "models=模型任务与用量、usage=用量统计、hardware=硬件（需运维开启）。也接受中文：全部/身份/版本/插件/模型/用量/硬件。"
+    "models=模型任务与用量、usage=用量统计、hardware=硬件（运维可关闭）。也接受中文：全部/身份/版本/插件/模型/用量/硬件。"
 )
 SEND_CARD_PARAM_DESCRIPTION = "为 true 时同时把状态卡片图片发到当前聊天（同一聊天有冷却时间）。默认 false。"
 HELP_TEXT = (
@@ -32,7 +32,7 @@ _TEXT_ARGS = frozenset({"文字", "文本", "text", "txt"})
 def tool_description(window_days: int) -> str:
     return (
         "【maifetch·自身信息】查询麦麦自身的运行信息：版本、接入平台、已加载插件与工具、已配置模型任务、"
-        f"近 {window_days} 天模型用量、本次在线时长（运维开启时含硬件信息）。"
+        f"近 {window_days} 天模型用量、本次在线时长与本机硬件信息（运维可关闭）。"
         "用户问到你是什么模型/什么版本/装了什么插件/能不能做某事/跑了多久/用了多少 token 时调用，不要凭印象回答。"
         "send_card=true 时直接把状态卡片图发到当前聊天。"
     )

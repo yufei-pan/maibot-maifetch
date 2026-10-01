@@ -42,7 +42,7 @@ def test_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
     assert snap.usage.total_cost == pytest.approx(4.87)
     assert snap.usage.total_messages == 3906
     assert snap.usage.totals_capped is False and snap.usage.messages_capped is False
-    assert snap.hardware is None
+    assert isinstance(snap.hardware, Hardware)  # 硬件信息默认开启
     asked = [kwargs.get("key") for name, kwargs in ctx.calls if name == "config.get"]
     assert "bot.qq_account" not in asked
 
@@ -113,7 +113,7 @@ def test_hardware_only_when_enabled(monkeypatch: pytest.MonkeyPatch, tmp_path: P
         raise AssertionError("hardware must not be collected when disabled")
 
     monkeypatch.setattr(collect_module, "collect_hardware", boom)
-    assert _collect(FakeCtx(), tmp=tmp_path).hardware is None
+    assert _collect(FakeCtx(), {"hardware": {"enabled": False}}, tmp_path).hardware is None
 
     monkeypatch.setattr(collect_module, "collect_hardware", lambda _path: Hardware(os="TestOS"))
     snap = _collect(FakeCtx(), {"hardware": {"enabled": True}}, tmp_path)

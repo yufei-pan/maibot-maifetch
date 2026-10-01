@@ -48,7 +48,10 @@ class VisibilitySectionConfig(PluginConfigBase):
 
     show_account: bool = Field(default=False, description="显示机器人账号（bot.qq_account）。")
     show_plugin_list: bool = Field(default=True, description="显示已加载插件列表；关闭后仍显示插件数量。")
-    show_cost: bool = Field(default=False, description="显示花费（按模型与合计）。")
+    show_cost: bool = Field(
+        default=True,
+        description="显示花费（按模型与合计）。开启后群聊中任何能触发工具或使用 /maifetch 的人都能看到。",
+    )
 
 
 class UsageSectionConfig(PluginConfigBase):
@@ -110,15 +113,19 @@ class CardSectionConfig(PluginConfigBase):
 
 
 class HardwareSectionConfig(PluginConfigBase):
-    """硬件信息（炫耀模式），默认关闭。"""
+    """本机硬件信息展示。"""
 
-    __ui_label__ = "硬件信息（炫耀模式）"
+    __ui_label__ = "硬件信息"
     __ui_icon__ = "cpu"
     __ui_order__ = 6
 
     enabled: bool = Field(
-        default=False,
-        description="总开关，默认关闭以免泄露机器信息；开启后下面各项才生效。无论如何都不采集主机名、IP、用户名、路径、序列号。",
+        default=True,
+        description=(
+            "在工具回复与状态卡片中显示本机硬件信息（系统、内核、CPU、内存、磁盘、Python、开机时长、容器 / 虚拟机类型）。"
+            "注意：开启后群聊中任何能使用 /maifetch 或触发工具的人都能看到这些机器信息，如不希望暴露请关闭；"
+            "下面各项仅在开启时生效。无论如何都不采集主机名、IP、用户名、路径、序列号。"
+        ),
     )
     show_os: bool = Field(default=True, description="操作系统名称与版本")
     show_kernel: bool = Field(default=True, description="内核版本")

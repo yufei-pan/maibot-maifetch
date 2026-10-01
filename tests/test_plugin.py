@@ -259,9 +259,17 @@ def test_png_config_skips_webp() -> None:
     assert base64.b64decode(ctx.sent_images[0][0])[:8] == b"\x89PNG\r\n\x1a\n"
 
 
-def test_hidden_cost_not_in_rendered_card() -> None:
+def test_default_card_shows_cost_and_hardware() -> None:
     ctx = FakeCtx()
     run(make_plugin(ctx).cmd_maifetch(stream_id="s1", matched_groups={}))
+    html = ctx.rendered_html[0]
+    assert "花费 · 7 天" in html and "¥4.87" in html
+    assert 'class="mf-hw"' in html
+
+
+def test_hidden_cost_not_in_rendered_card() -> None:
+    ctx = FakeCtx()
+    run(make_plugin(ctx, {"visibility": {"show_cost": False}}).cmd_maifetch(stream_id="s1", matched_groups={}))
     assert "¥" not in ctx.rendered_html[0]
     assert "123456789" not in ctx.rendered_html[0]
 
