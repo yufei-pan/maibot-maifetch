@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "id": "com.0-hz.maifetch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "maifetch（麦麦状态）",
   "description": "让麦麦了解自己：版本、平台、插件与工具、模型用量、在线时长（可选硬件信息）。提供规划器工具、规划器自身信息注入与 /maifetch 状态卡片图。",
   "author": {

@@ -137,7 +137,7 @@ def test_manifest_matches_spec() -> None:
     manifest = json.loads((PLUGIN_DIR / "_manifest.json").read_text(encoding="utf-8"))
     assert manifest["manifest_version"] == 2
     assert manifest["id"] == "com.0-hz.maifetch"
-    assert manifest["version"] == "0.1.0"
+    assert manifest["version"] == "0.2.0"
     assert manifest["host_application"] == {"min_version": "1.3.1", "max_version": "1.99.99"}
     assert manifest["sdk"] == {"min_version": "2.8.2", "max_version": "2.99.99"}
     assert set(manifest["capabilities"]) == {
