@@ -267,6 +267,16 @@ def test_default_card_shows_cost_and_hardware() -> None:
     assert 'class="mf-hw"' in html
 
 
+def test_card_and_tool_use_configured_currency_symbol() -> None:
+    ctx = FakeCtx()
+    plugin = make_plugin(ctx, {"usage": {"currency_symbol": "$"}})
+    run(plugin.cmd_maifetch(stream_id="s1", matched_groups={}))
+    html = ctx.rendered_html[0]
+    assert "$4.87" in html and "¥" not in html
+    content = run(plugin.tool_maifetch(section="usage"))["content"]
+    assert "花费 $4.87" in content and "¥" not in content
+
+
 def test_hidden_cost_not_in_rendered_card() -> None:
     ctx = FakeCtx()
     run(make_plugin(ctx, {"visibility": {"show_cost": False}}).cmd_maifetch(stream_id="s1", matched_groups={}))

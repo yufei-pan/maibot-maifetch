@@ -6,7 +6,7 @@
 # 是否启用插件
 enabled = true
 # 配置版本（插件自动维护，请勿手改）
-config_version = "1.0.0"
+config_version = "1.1.0"
 
 [visibility]
 # 可见性：同时作用于规划器工具、规划器提示词注入与状态卡片
@@ -26,6 +26,12 @@ top_models = 5
 show_by_requests = true
 # 显示按花费排序的模型花费排行（需同时开启 visibility.show_cost）
 show_by_cost = true
+# 花费前显示的货币符号，只改显示，不做汇率换算
+# 可选：¥、$、€、£、₩、₹、₽、HK$、NT$、自定义（WebUI 中为下拉框）
+currency_symbol = "¥"
+# 自定义货币符号（最多 8 个字符），仅在 currency_symbol = "自定义" 时生效；WebUI 不显示此项
+# 也可以直接把任意符号写进 currency_symbol（如 currency_symbol = "₿"），插件会自动转为自定义
+custom_currency_symbol = ""
 
 [injection]
 # 每次规划前把一段简短的自身信息追加到规划器系统提示词

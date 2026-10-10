@@ -139,7 +139,7 @@ def _models_block(s: Snapshot) -> str | None:
         if model.avg_latency_s is not None:
             bits.append(fmt_latency(model.avg_latency_s))
         if model.cost is not None:
-            bits.append(fmt_cost(model.cost))
+            bits.append(fmt_cost(model.cost, usage.currency_symbol))
         items.append(f"{model.model_name} " + "/".join(bits))
     return title + _models_scope(usage.model_count, len(usage.models), usage.totals_capped) + "；".join(items)
 
@@ -164,7 +164,8 @@ def _cost_block(s: Snapshot) -> str | None:
     if not usage.models_by_cost:
         return title + "暂无花费记录"
     items = [
-        f"{model.model_name} {fmt_cost(model.cost or 0.0)}/{fmt_int(model.requests)} 次/{fmt_tokens(model.tokens)} tok"
+        f"{model.model_name} {fmt_cost(model.cost or 0.0, usage.currency_symbol)}"
+        f"/{fmt_int(model.requests)} 次/{fmt_tokens(model.tokens)} tok"
         for model in usage.models_by_cost
     ]
     return (
@@ -189,7 +190,7 @@ def _totals_block(s: Snapshot) -> str:
     if usage.total_messages is not None:
         parts.append(f"{capped(fmt_int(usage.total_messages), usage.messages_capped)} 条消息")
     if usage.total_cost is not None:
-        parts.append(f"花费 {capped(fmt_cost(usage.total_cost), usage.totals_capped)}")
+        parts.append(f"花费 {capped(fmt_cost(usage.total_cost, usage.currency_symbol), usage.totals_capped)}")
     return f"【合计·近 {usage.window_days} 天（全部模型）】" + ("、".join(parts) if parts else UNKNOWN)
 
 

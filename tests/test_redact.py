@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from maifetch.config import MaiFetchConfig, build_settings
 from maifetch.redact import apply_visibility
 from maifetch.sample import sample_snapshot
@@ -72,3 +74,12 @@ def test_ranking_toggles() -> None:
     assert out.usage.show_cost_ranking is False
     assert out.usage.models_by_cost == ()
     assert len(out.usage.models) == 3  # 规划器注入仍需要主要模型名
+
+
+def test_currency_symbol_hidden_with_cost() -> None:
+    raw = _raw()
+    raw = replace(raw, usage=replace(raw.usage, currency_symbol="₿"))
+    shown = _settings({})
+    assert apply_visibility(raw, shown.visibility, shown.hardware).usage.currency_symbol == "₿"
+    hidden = _settings({"visibility": {"show_cost": False}})
+    assert apply_visibility(raw, hidden.visibility, hidden.hardware).usage.currency_symbol == ""

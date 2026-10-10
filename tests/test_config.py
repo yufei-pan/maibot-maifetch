@@ -3,12 +3,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import tomllib
+from maibot_sdk.config import generate_plugin_config_schema
 
 from maifetch.config import (
     BUNDLED_TEMPLATES,
+    CURRENCY_CHOICES,
     CURRENT_CONFIG_VERSION,
+    CUSTOM_CURRENCY,
     DEFAULT_TEMPLATE,
+    MAX_CUSTOM_CURRENCY_LENGTH,
     MaiFetchConfig,
     build_settings,
     ensure_shipped_config_present,
@@ -155,3 +160,66 @@ def test_ranking_toggles_default_on_and_flatten() -> None:
     settings = build_settings(MaiFetchConfig.model_validate({"usage": {"show_by_cost": False}}))
     assert settings.show_by_requests is True
     assert settings.show_by_cost is False
+
+
+def test_currency_defaults_and_webui_schema() -> None:
+    cfg = MaiFetchConfig()
+    assert (cfg.usage.currency_symbol, cfg.usage.custom_currency_symbol) == ("¥", "")
+    fields = generate_plugin_config_schema(MaiFetchConfig)["sections"]["usage"]["fields"]
+    assert fields["currency_symbol"]["ui_type"] == "select"
+    assert fields["currency_symbol"]["choices"] == list(CURRENCY_CHOICES)
+    assert {"¥", "$", "€", "£", CUSTOM_CURRENCY} <= set(CURRENCY_CHOICES)
+    # 自定义符号只在 config.toml 里写，WebUI 不显示
+    assert fields["custom_currency_symbol"]["hidden"] is True
+
+
+@pytest.mark.parametrize(
+    ("usage", "expected"),
+    [
+        ({}, "¥"),
+        ({"currency_symbol": "$"}, "$"),
+        ({"currency_symbol": CUSTOM_CURRENCY, "custom_currency_symbol": " ₿ "}, "₿"),
+        ({"currency_symbol": CUSTOM_CURRENCY}, "¥"),
+        ({"currency_symbol": "€", "custom_currency_symbol": "₿"}, "€"),
+    ],
+)
+def test_build_settings_resolves_currency_symbol(usage: dict, expected: str) -> None:
+    assert build_settings(MaiFetchConfig.model_validate({"usage": usage})).currency_symbol == expected
+
+
+def test_normalize_listed_currency_needs_no_notes() -> None:
+    normalized, notes = normalize_config_dict({"usage": {"currency_symbol": "€"}})
+    assert notes == []
+    assert normalized["usage"]["currency_symbol"] == "€"
+
+
+def test_normalize_turns_unlisted_symbol_into_custom() -> None:
+    normalized, notes = normalize_config_dict({"usage": {"currency_symbol": " ₿ "}})
+    assert normalized["usage"]["currency_symbol"] == CUSTOM_CURRENCY
+    assert normalized["usage"]["custom_currency_symbol"] == "₿"
+    assert any("usage.currency_symbol" in note for note in notes)
+    # 再规范化一次不应再有变更（否则每次加载都会改写配置）
+    again, again_notes = normalize_config_dict(normalized)
+    assert again_notes == []
+    assert again == normalized
+
+
+def test_normalize_accepts_english_custom_keyword() -> None:
+    normalized, _ = normalize_config_dict({"usage": {"currency_symbol": "Custom", "custom_currency_symbol": "₿"}})
+    assert normalized["usage"]["currency_symbol"] == CUSTOM_CURRENCY
+    assert normalized["usage"]["custom_currency_symbol"] == "₿"
+
+
+def test_normalize_blank_currency_and_cleans_custom() -> None:
+    normalized, notes = normalize_config_dict({"usage": {"currency_symbol": " ", "custom_currency_symbol": " 元\n "}})
+    assert normalized["usage"]["currency_symbol"] == "¥"
+    assert normalized["usage"]["custom_currency_symbol"] == "元"
+    assert any("usage.currency_symbol" in note for note in notes)
+
+
+def test_normalize_truncates_long_custom_symbol() -> None:
+    normalized, notes = normalize_config_dict(
+        {"usage": {"currency_symbol": CUSTOM_CURRENCY, "custom_currency_symbol": "X" * 20}}
+    )
+    assert normalized["usage"]["custom_currency_symbol"] == "X" * MAX_CUSTOM_CURRENCY_LENGTH
+    assert any("usage.custom_currency_symbol" in note for note in notes)

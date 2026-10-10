@@ -134,7 +134,9 @@ def build_scalars(s: Snapshot) -> dict[str, str]:
         "total_requests": _v(capped(fmt_int(usage.total_requests), usage.totals_capped) if totals_known else None),
         "total_tokens": _v(capped(fmt_tokens(usage.total_tokens or 0), usage.totals_capped) if totals_known else None),
         "total_cost": _v(
-            capped(fmt_cost(usage.total_cost), usage.totals_capped) if usage.total_cost is not None else None,
+            capped(fmt_cost(usage.total_cost, usage.currency_symbol), usage.totals_capped)
+            if usage.total_cost is not None
+            else None,
             hideable=True,
         ),
         "total_messages": _v(
@@ -184,7 +186,8 @@ def _tiles(s: Snapshot) -> str:
         ),
     ]
     if usage.total_cost is not None:
-        tiles.append((capped(fmt_cost(usage.total_cost), usage.totals_capped), f"花费 · {usage.window_days} 天"))
+        cost = capped(fmt_cost(usage.total_cost, usage.currency_symbol), usage.totals_capped)
+        tiles.append((cost, f"花费 · {usage.window_days} 天"))
     else:
         tiles.append(
             (
@@ -200,7 +203,7 @@ def _top_cost_text(s: Snapshot) -> str:
     if not usage.show_cost_ranking or not usage.models_by_cost:
         return ""
     top = usage.models_by_cost[0]
-    return f"{top.model_name} {fmt_cost(top.cost or 0.0)}"
+    return f"{top.model_name} {fmt_cost(top.cost or 0.0, usage.currency_symbol)}"
 
 
 def _cost_scope_label(s: Snapshot) -> str:
@@ -222,7 +225,11 @@ def _model_rows(s: Snapshot) -> str:
     rows: list[str] = []
     for model in usage.models:
         pct = round(model.requests / top * 100)
-        cost = f'<span class="mf-model-cost">{_e(fmt_cost(model.cost))}</span>' if model.cost is not None else ""
+        cost = (
+            f'<span class="mf-model-cost">{_e(fmt_cost(model.cost, usage.currency_symbol))}</span>'
+            if model.cost is not None
+            else ""
+        )
         rows.append(
             '<div class="mf-model-row">'
             f'<span class="mf-model-name">{_e(model.model_name)}</span>'
@@ -343,7 +350,7 @@ def _model_table_rows(s: Snapshot) -> str:
         if model.avg_latency_s is not None:
             bits.append(fmt_latency(model.avg_latency_s))
         if model.cost is not None:
-            bits.append(fmt_cost(model.cost))
+            bits.append(fmt_cost(model.cost, usage.currency_symbol))
         rows.append(_tr(model.model_name, " · ".join(bits)))
     if usage.show_request_ranking and not usage.models:
         rows.append(_tr("模型", f"近 {usage.window_days} 天暂无调用记录"))
@@ -354,7 +361,7 @@ def _model_table_rows(s: Snapshot) -> str:
     if usage.total_messages is not None:
         totals.append(f"消息 {capped(fmt_int(usage.total_messages), usage.messages_capped)} 条")
     if usage.total_cost is not None:
-        totals.append(capped(fmt_cost(usage.total_cost), usage.totals_capped))
+        totals.append(capped(fmt_cost(usage.total_cost, usage.currency_symbol), usage.totals_capped))
     rows.append(_tr("合计", " · ".join(totals)))
     return "".join(rows)
 
@@ -380,7 +387,7 @@ def _cost_block(s: Snapshot) -> str:
             '<div class="mf-cost-row">'
             f'<span class="mf-model-name">{_e(model.model_name)}</span>'
             f'<div class="mf-model-bar"><i style="width:{round((model.cost or 0.0) / top * 100)}%"></i></div>'
-            f'<span class="mf-cost-val">{_e(fmt_cost(model.cost or 0.0))}</span>'
+            f'<span class="mf-cost-val">{_e(fmt_cost(model.cost or 0.0, usage.currency_symbol))}</span>'
             f'<span class="mf-model-req">{_e(fmt_int(model.requests))} 次</span>'
             f'<span class="mf-model-tok">{_e(fmt_tokens(model.tokens))}</span>'
             "</div>"
@@ -403,7 +410,8 @@ def _cost_table(s: Snapshot) -> str:
         rows = "".join(
             _tr(
                 model.model_name,
-                f"{fmt_cost(model.cost or 0.0)} · {fmt_int(model.requests)} 次 · {fmt_tokens(model.tokens)} tok",
+                f"{fmt_cost(model.cost or 0.0, usage.currency_symbol)} · {fmt_int(model.requests)} 次"
+                f" · {fmt_tokens(model.tokens)} tok",
             )
             for model in usage.models_by_cost
         )

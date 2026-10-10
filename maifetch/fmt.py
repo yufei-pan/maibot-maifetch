@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 UNKNOWN = "未知"
+DEFAULT_CURRENCY_SYMBOL = "¥"
 
 
 def fmt_int(value: int) -> str:
@@ -21,8 +22,10 @@ def fmt_tokens(value: int) -> str:
     return f"{value / 1_000_000_000:.2f}B"
 
 
-def fmt_cost(value: float) -> str:
-    return f"¥{value:.2f}"
+def fmt_cost(value: float, symbol: str) -> str:
+    """只换显示用的货币符号，不做汇率换算。"""
+
+    return f"{symbol}{value:.2f}"
 
 
 def fmt_latency(seconds: float) -> str:

@@ -51,7 +51,9 @@ def test_fmt_bytes_and_used_total() -> None:
 
 def test_small_formatters() -> None:
     assert fmt_int(1774) == "1,774"
-    assert fmt_cost(4.871) == "¥4.87"
+    assert fmt_cost(4.871, "¥") == "¥4.87"
+    assert fmt_cost(4.871, "HK$") == "HK$4.87"
+    assert fmt_cost(4.871, "") == "4.87"
     assert fmt_latency(2.06) == "2.1s"
     assert capped("1,774", True) == "1,774+"
     assert capped("1,774", False) == "1,774"

@@ -6,16 +6,25 @@ import shutil
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, get_args
 
 from maibot_sdk import Field, PluginConfigBase
 
-CURRENT_CONFIG_VERSION = "1.0.0"
+from maifetch.fmt import DEFAULT_CURRENCY_SYMBOL
+
+CURRENT_CONFIG_VERSION = "1.1.0"
 SHIPPED_CONFIG_TEMPLATE_NAME = "config.default.toml"
 DEFAULT_TEMPLATE = "assets/dashboard.html"
 BUNDLED_TEMPLATES: tuple[str, ...] = ("dashboard", "terminal", "sheet")
 VALID_IMAGE_FORMATS: tuple[str, ...] = ("webp", "png")
 COMMAND_TRIGGER = "/maifetch"
+
+# 花费前的货币符号：只改显示，不做汇率换算。WebUI 下拉框直接显示这些值；
+# 选「自定义」时用 config.toml 里的 usage.custom_currency_symbol（WebUI 不显示该项）
+CUSTOM_CURRENCY = "自定义"
+CurrencySymbol = Literal["¥", "$", "€", "£", "₩", "₹", "₽", "HK$", "NT$", "自定义"]
+CURRENCY_CHOICES: tuple[str, ...] = get_args(CurrencySymbol)
+MAX_CUSTOM_CURRENCY_LENGTH = 8
 
 # (配置节, 字段) → (最小值, 最大值)
 NUMERIC_BOUNDS: dict[tuple[str, str], tuple[float, float]] = {
@@ -66,6 +75,18 @@ class UsageSectionConfig(PluginConfigBase):
     show_by_requests: bool = Field(default=True, description="显示按调用次数排序的模型用量排行。")
     show_by_cost: bool = Field(
         default=True, description="显示按花费排序的模型花费排行（需同时开启「可见性」中的显示花费）。"
+    )
+    currency_symbol: CurrencySymbol = Field(
+        default=DEFAULT_CURRENCY_SYMBOL,
+        description=(
+            "花费前显示的货币符号，只改显示，不做汇率换算。"
+            "选「自定义」时使用 config.toml 里 [usage] 的 custom_currency_symbol（未填则用 ¥）。"
+        ),
+    )
+    custom_currency_symbol: str = Field(
+        default="",
+        description=f"自定义货币符号（最多 {MAX_CUSTOM_CURRENCY_LENGTH} 个字符），仅在 currency_symbol 选「自定义」时生效。",
+        json_schema_extra={"hidden": True},
     )
 
 
@@ -189,6 +210,7 @@ class Settings:
     top_models: int
     show_by_requests: bool
     show_by_cost: bool
+    currency_symbol: str
     injection_enabled: bool
     refresh_minutes: int
     aliases: tuple[str, ...]
@@ -217,8 +239,27 @@ def _coerce_number(value: Any, as_float: bool) -> float | int | None:
     return number if as_float else round(number)
 
 
+def _normalize_currency(usage: Mapping[str, Any], notes: list[str]) -> tuple[str, str]:
+    """清洗货币符号：不在下拉列表里的符号自动转为「自定义」，方便直接在 config.toml 写任意符号。"""
+
+    currency = str(usage.get("currency_symbol") or "").strip()
+    custom = " ".join(str(usage.get("custom_currency_symbol") or "").split())
+    if currency.lower() == "custom":
+        currency = CUSTOM_CURRENCY
+    if not currency:
+        notes.append(f"usage.currency_symbol 为空，已恢复默认 {DEFAULT_CURRENCY_SYMBOL}")
+        currency = DEFAULT_CURRENCY_SYMBOL
+    elif currency not in CURRENCY_CHOICES:
+        notes.append(f"usage.currency_symbol 不在可选列表，已改为「{CUSTOM_CURRENCY}」并写入 custom_currency_symbol")
+        currency, custom = CUSTOM_CURRENCY, " ".join(currency.split())
+    if len(custom) > MAX_CUSTOM_CURRENCY_LENGTH:
+        custom = custom[:MAX_CUSTOM_CURRENCY_LENGTH]
+        notes.append(f"usage.custom_currency_symbol 超过 {MAX_CUSTOM_CURRENCY_LENGTH} 个字符，已截断为 {custom}")
+    return currency, custom
+
+
 def normalize_config_dict(raw: Mapping[str, Any] | None) -> tuple[dict[str, Any], list[str]]:
-    """补齐默认值、钳制数值、清洗格式 / 模板 / 别名，并写入当前配置版本。
+    """补齐默认值、钳制数值、清洗格式 / 模板 / 货币符号 / 别名，并写入当前配置版本。
 
     Returns:
         (规范化后的配置字典, 变更说明列表)。说明为空表示无需修正。
@@ -262,6 +303,10 @@ def normalize_config_dict(raw: Mapping[str, Any] | None) -> tuple[dict[str, Any]
         notes.append("card.template 为空，已恢复默认模板")
     merged["card"]["template"] = template
 
+    currency, custom_currency = _normalize_currency(merged["usage"], notes)
+    merged["usage"]["currency_symbol"] = currency
+    merged["usage"]["custom_currency_symbol"] = custom_currency
+
     raw_aliases = merged["command"].get("aliases")
     if isinstance(raw_aliases, str):
         raw_aliases = [raw_aliases]
@@ -282,6 +327,9 @@ def build_settings(config: MaiFetchConfig) -> Settings:
     normalized, _ = normalize_config_dict(config.model_dump(mode="python"))
     cfg = MaiFetchConfig.model_validate(normalized)
     hw = cfg.hardware
+    currency = cfg.usage.currency_symbol
+    if currency == CUSTOM_CURRENCY:
+        currency = cfg.usage.custom_currency_symbol or DEFAULT_CURRENCY_SYMBOL
     return Settings(
         enabled=cfg.plugin.enabled,
         visibility=Visibility(
@@ -293,6 +341,7 @@ def build_settings(config: MaiFetchConfig) -> Settings:
         top_models=cfg.usage.top_models,
         show_by_requests=cfg.usage.show_by_requests,
         show_by_cost=cfg.usage.show_by_cost,
+        currency_symbol=currency,
         injection_enabled=cfg.injection.enabled,
         refresh_minutes=cfg.injection.refresh_minutes,
         aliases=tuple(cfg.command.aliases),

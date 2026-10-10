@@ -117,6 +117,16 @@ def test_cost_shown_only_when_present() -> None:
     assert "花费 ¥4.87" in format_tool_text(sample_snapshot(cost=True))
 
 
+def test_cost_uses_configured_currency_symbol() -> None:
+    snap = sample_snapshot(cost=True)
+    snap = replace(snap, usage=replace(snap.usage, currency_symbol="HK$"))
+    text = format_tool_text(snap)
+    assert "花费 HK$4.87" in text
+    assert "qwen3-235b HK$3.42/402 次" in text
+    assert "deepseek-v3.2 1,284 次/1.86M tok/2.1s/HK$0.96" in text
+    assert "¥" not in text
+
+
 def test_user_text_has_no_planner_hint() -> None:
     text = format_user_text(sample_snapshot())
     assert REPLY_HINT not in text

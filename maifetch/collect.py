@@ -307,7 +307,13 @@ async def collect_snapshot(
     )
     usage_fields: dict[str, Any] = models_parsed or {}
     total_messages, messages_capped = messages_parsed if messages_parsed else (None, False)
-    usage = Usage(window_days=days, total_messages=total_messages, messages_capped=messages_capped, **usage_fields)
+    usage = Usage(
+        window_days=days,
+        currency_symbol=settings.currency_symbol,
+        total_messages=total_messages,
+        messages_capped=messages_capped,
+        **usage_fields,
+    )
     return Snapshot(
         collected_at=collected_at,
         identity=identity,

@@ -191,3 +191,24 @@ def test_request_ranking_off_clears_its_fragments() -> None:
     assert build_scalars(snap)["model_scope"] == ""
     assert "<td>合计</td>" in build_fragments(snap)["model_table_rows_html"]
     assert "deepseek-v3.2" not in build_fragments(snap)["model_table_rows_html"]
+
+
+def test_card_uses_configured_currency_symbol() -> None:
+    snap = sample_snapshot(cost=True)
+    snap = replace(snap, usage=replace(snap.usage, currency_symbol="€"))
+    scalars, fragments = build_scalars(snap), build_fragments(snap)
+    assert scalars["total_cost"] == "€4.87"
+    assert scalars["top_cost_model"] == "qwen3-235b €3.42"
+    assert "€4.87" in fragments["tiles_html"]
+    assert "€0.96" in fragments["model_rows_html"]
+    assert "€3.42" in fragments["cost_block_html"] and "€3.42" in fragments["cost_table_html"]
+    assert "€4.87" in fragments["model_table_rows_html"]
+    assert "¥" not in "".join(scalars.values()) + "".join(fragments.values())
+
+
+def test_custom_currency_symbol_is_escaped() -> None:
+    snap = sample_snapshot(cost=True)
+    snap = replace(snap, usage=replace(snap.usage, currency_symbol="<x>"))
+    every = "".join(build_scalars(snap).values()) + "".join(build_fragments(snap).values())
+    assert "&lt;x&gt;4.87" in every
+    assert "<x>" not in every

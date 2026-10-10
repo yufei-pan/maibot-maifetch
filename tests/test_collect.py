@@ -167,3 +167,9 @@ def test_cost_ranking_from_same_rows() -> None:
     assert [m.model_name for m in snap.usage.models_by_cost] == ["pricey", "cheap-busy"]
     assert snap.usage.costed_model_count == 2
     assert snap.usage.models[0].model_name == "cheap-busy"
+
+
+def test_currency_symbol_comes_from_settings() -> None:
+    assert _collect(FakeCtx()).usage.currency_symbol == "¥"
+    snap = _collect(FakeCtx(), {"usage": {"currency_symbol": "自定义", "custom_currency_symbol": "₿"}})
+    assert snap.usage.currency_symbol == "₿"

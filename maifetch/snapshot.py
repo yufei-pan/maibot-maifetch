@@ -6,6 +6,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any
 
+from maifetch.fmt import DEFAULT_CURRENCY_SYMBOL
+
 
 @dataclass(frozen=True)
 class Identity:
@@ -56,6 +58,7 @@ class Usage:
     total_requests: int | None = None
     total_tokens: int | None = None
     total_cost: float | None = None
+    currency_symbol: str = DEFAULT_CURRENCY_SYMBOL  # 花费前的显示符号；花费隐藏时为空串
     totals_capped: bool = False
     total_messages: int | None = None
     messages_capped: bool = False

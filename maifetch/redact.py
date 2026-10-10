@@ -20,7 +20,9 @@ def apply_visibility(
     runtime = snapshot.runtime if visibility.show_plugin_list else replace(snapshot.runtime, plugins=None)
     usage = snapshot.usage
     if not visibility.show_cost:
-        usage = replace(usage, total_cost=None, models=tuple(replace(m, cost=None) for m in usage.models))
+        usage = replace(
+            usage, total_cost=None, currency_symbol="", models=tuple(replace(m, cost=None) for m in usage.models)
+        )
     show_cost_ranking = show_by_cost and visibility.show_cost
     usage = replace(
         usage,

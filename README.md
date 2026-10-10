@@ -48,6 +48,8 @@
 | `usage.top_models` | `5` | 每个排行列出前几个模型（1–10） |
 | `usage.show_by_requests` | `true` | 显示按调用次数排序的模型用量排行 |
 | `usage.show_by_cost` | `true` | 显示按花费排序的花费排行（需同时开启 `visibility.show_cost`） |
+| `usage.currency_symbol` | `¥` | 花费前的货币符号，只改显示、不做汇率换算。WebUI 下拉可选 `¥` `$` `€` `£` `₩` `₹` `₽` `HK$` `NT$` `自定义` |
+| `usage.custom_currency_symbol` | `""` | 自定义符号（最多 8 个字符），仅在 `currency_symbol = "自定义"` 时生效；只能在 `config.toml` 里设置（WebUI 不显示）。直接把任意符号写进 `currency_symbol`（如 `"₿"`）也行，插件会自动转为自定义 |
 | `injection.enabled` | `true` | 规划器注入开关 |
 | `injection.refresh_minutes` | `10` | 摘要刷新间隔（1–1440 分钟） |
 | `command.aliases` | `[]` | 命令别名 |

@@ -2,6 +2,12 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### 新增
+
+- 可配置花费的货币符号（`usage.currency_symbol`，默认 `¥`）：WebUI 下拉可选常用符号，选「自定义」时使用 `config.toml` 里的 `usage.custom_currency_symbol`。只改显示，不做汇率换算。配置版本升至 1.1.0，旧配置自动补齐新字段。
+
 ## [0.1.0] - 2026-10-01
 
 ### 新增
