@@ -1,0 +1,5 @@
+# 与 maibot-plugin-sdk / MaiBot 保持一致
+target-version = "py310"
+line-length = 120
+# docs/ 下是设计文档，其中的代码片段不参与格式化
+extend-exclude = ["docs"]
