@@ -22,19 +22,19 @@ _PLUGIN_DIR = Path(__file__).resolve().parent
 if str(_PLUGIN_DIR) not in sys.path:
     sys.path.insert(0, str(_PLUGIN_DIR))
 
-from maifetch.card import build_card_html
-from maifetch.collect import collect_snapshot
-from maifetch.config import (
+from maifetch.card import build_card_html  # noqa: E402
+from maifetch.collect import collect_snapshot  # noqa: E402
+from maifetch.config import (  # noqa: E402
     MaiFetchConfig,
     Settings,
     build_settings,
     ensure_shipped_config_present,
     normalize_config_dict,
 )
-from maifetch.cooldown import Cooldown
-from maifetch.inject import apply_injection
-from maifetch.redact import apply_visibility
-from maifetch.registration import (
+from maifetch.cooldown import Cooldown  # noqa: E402
+from maifetch.inject import apply_injection  # noqa: E402
+from maifetch.redact import apply_visibility  # noqa: E402
+from maifetch.registration import (  # noqa: E402
     COMMAND_COMPONENT_NAME,
     HELP_TEXT,
     SECTION_PARAM_DESCRIPTION,
@@ -45,9 +45,9 @@ from maifetch.registration import (
     patch_components,
     tool_description,
 )
-from maifetch.render import font_face_css, load_template, png_to_webp
-from maifetch.snapshot import Snapshot
-from maifetch.text import SECTIONS, format_injection, format_tool_text, format_user_text, parse_bool
+from maifetch.render import font_face_css, load_template, png_to_webp  # noqa: E402
+from maifetch.snapshot import Snapshot  # noqa: E402
+from maifetch.text import SECTIONS, format_injection, format_tool_text, format_user_text, parse_bool  # noqa: E402
 
 PLUGIN_VERSION: str = json.loads((_PLUGIN_DIR / "_manifest.json").read_text(encoding="utf-8"))["version"]
 FONT_DIR = _PLUGIN_DIR / "assets" / "fonts"

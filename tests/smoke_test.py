@@ -16,9 +16,9 @@ for _path in (PLUGIN_DIR, PLUGIN_DIR.parent / "maibot-plugin-sdk", PLUGIN_DIR / 
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from fakes import FakeCtx
+from fakes import FakeCtx  # noqa: E402
 
-import plugin as maifetch_plugin
+import plugin as maifetch_plugin  # noqa: E402
 
 
 def test_manifest_and_version() -> None:

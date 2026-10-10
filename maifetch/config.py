@@ -85,7 +85,9 @@ class UsageSectionConfig(PluginConfigBase):
     )
     custom_currency_symbol: str = Field(
         default="",
-        description=f"自定义货币符号（最多 {MAX_CUSTOM_CURRENCY_LENGTH} 个字符），仅在 currency_symbol 选「自定义」时生效。",
+        description=(
+            f"自定义货币符号（最多 {MAX_CUSTOM_CURRENCY_LENGTH} 个字符），仅在 currency_symbol 选「自定义」时生效。"
+        ),
         json_schema_extra={"hidden": True},
     )
 
@@ -147,7 +149,8 @@ class HardwareSectionConfig(PluginConfigBase):
     enabled: bool = Field(
         default=True,
         description=(
-            "在工具回复与状态卡片中显示本机硬件信息（系统、内核、CPU、内存、磁盘、Python、开机时长、容器 / 虚拟机类型）。"
+            "在工具回复与状态卡片中显示本机硬件信息"
+            "（系统、内核、CPU、内存、磁盘、Python、开机时长、容器 / 虚拟机类型）。"
             "注意：开启后群聊中任何能使用 /maifetch 或触发工具的人都能看到这些机器信息，如不希望暴露请关闭；"
             "下面各项仅在开启时生效。无论如何都不采集主机名、IP、用户名、路径、序列号。"
         ),

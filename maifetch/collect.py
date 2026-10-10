@@ -94,7 +94,7 @@ def _float_or_none(value: Any) -> float | None:
 async def _fetch_identity(ctx: Any, show_account: bool) -> dict[str, Any]:
     keys = list(_IDENTITY_KEYS) + ([_ACCOUNT_KEY] if show_account else [])
     results = await asyncio.gather(*(ctx.call_capability("config.get", key=key, default=None) for key in keys))
-    return {key: _check(result) for key, result in zip(keys, results)}
+    return {key: _check(result) for key, result in zip(keys, results, strict=True)}
 
 
 def local_timezone_name() -> str | None:

@@ -15,9 +15,9 @@ from pathlib import Path
 PLUGIN_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PLUGIN_DIR))
 
-from maifetch.card import build_card_html
-from maifetch.render import font_face_css
-from maifetch.sample import sample_snapshot
+from maifetch.card import build_card_html  # noqa: E402
+from maifetch.render import font_face_css  # noqa: E402
+from maifetch.sample import sample_snapshot  # noqa: E402
 
 
 async def _main(args: argparse.Namespace) -> None:
